@@ -1,0 +1,167 @@
+//.my-message.el-message {
+//  display: flex;
+//  justify-content: center;
+//  min-width: 500px;
+//  min-height: 100px;
+//  border: 0;
+//  border-radius: 50px;
+//  background: #000000B3;
+//
+//  .el-message__icon {
+//    display: none;
+//    &:before {
+//      display: none;
+//    }
+//  }
+//
+//  &.success .el-message__icon {
+//    display: block;
+//    flex-shrink: 0;
+//    width: 35px;
+//    height: 35px;
+//    margin-right: 20px;
+//    background-image: url(./success.png);
+//    background-repeat: no-repeat;
+//    background-size: 100% 100%;
+//  }
+//
+//  .el-message__content {
+//    text-align: center;
+//    color: #FFFFFF;
+//    font-family: Microsoft YaHei, Microsoft YaHei-Regular;
+//    font-size: 32px;
+//    font-weight: 400;
+//  }
+//}
+
+// 错误的提示样式
+.el-message--error {
+  position: absolute;
+
+  background: rgba(0, 0, 0, 0.7);
+
+  min-width: 300px;
+  height: 50px;
+  border-radius: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+
+  .el-message__content {
+    font-size: 16px;
+    font-family: Microsoft YaHei, Microsoft YaHei-Regular;
+    font-weight: 400;
+    text-align: left;
+    color: #ffffff;
+    line-height: 15px;
+  }
+
+  .el-icon-error {
+    &::before {
+      content: "";
+      display: block;
+      width: 18px;
+      height: 18px;
+      background: url("@/assets/img/backstage/icon/error.png");
+      background-size: 18px 18px;
+    }
+  }
+}
+// // 成功的提示样式
+.el-message--success {
+  // position: absolute;
+  // top: 50% !important;
+  // left: 50%;
+  // transform: translate(-50%, -50%) !important;
+
+  background: rgba(0, 0, 0, 0.7);
+
+  min-width: 300px;
+  height: 50px;
+  border-radius: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+
+  .el-message__content {
+    font-size: 16px;
+    font-family: Microsoft YaHei, Microsoft YaHei-Regular;
+    font-weight: 400;
+    text-align: left;
+    color: #ffffff;
+    line-height: 15px;
+  }
+
+  .el-icon-success {
+    &::before {
+      content: "";
+      display: block;
+      width: 18px;
+      height: 18px;
+      background: url("@/assets/img/backstage/icon/success.png");
+      background-size: 18px 18px;
+    }
+  }
+}
+
+.font-success {
+  background: #63ddac80;
+  border: 2px #4fdaa2 solid;
+  min-width: 300px;
+  height: 50px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .el-message__content {
+    font-size: 18px;
+    text-align: center;
+    color: #fff;
+    line-height: 15px;
+    font-family: "ziyuanyuanti500W";
+  }
+  .el-message__icon {
+    &::before {
+      content: "";
+      display: block;
+      width: 18px;
+      height: 18px;
+      background: url("./success2.png");
+      background-size: 18px 18px;
+    }
+  }
+}
+
+.font-error {
+  position: absolute;
+  background: #f08c9175;
+  min-width: 300px;
+  height: 50px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-color: #f08c91;
+  border: 2px #f07c81 solid;
+  .el-message__content {
+    font-size: 18px;
+    text-align: center;
+    color: #fff;
+    line-height: 15px;
+    font-family: "ziyuanyuanti500W";
+  }
+  .el-message__icon {
+    &::before {
+      content: "";
+      display: block;
+      width: 18px;
+      height: 18px;
+      background: url("./error.png");
+      background-size: 18px 18px;
+    }
+  }
+}

@@ -1,0 +1,371 @@
+$topic: #2e8ae6;
+$button-bg-box: #00A8E6; 
+
+$text-topic: $topic;
+$text-primary: #ffffff;
+$text-topic-stop: #F9FAFB;
+$text-secondary: #c2efff;
+$text-third: #333333;
+$text-origin: #ff9500;
+$text-origin-deep: #f29822;
+$text-doing: #1BC7BA;
+$text-sub-topic: #18304e;
+$schedule-bg: #E3E3E3;
+
+$button-bg-blue-light: #00AEFF;
+$button-bg-blue-deep: $topic;
+$button-bg-blue-dark: #2666A8;
+$button-bg-green-light: #0CCE6B;
+$button-bg-green-deep: #39B3AE; 
+$button-bg-purple-light: #8962D9; 
+$button-bg-purple-deep: #4045c9; 
+$button-bg-yellow-light: $text-origin; 
+$button-bg-yellow-deep: #E9854F; 
+$button-bg-red-light: #FF6161; 
+$button-bg-red-deep: #F26F61;
+$button-bg-blue-lighter: #30AEE5;
+
+$box-box-blue-gradient: #00B3A4;
+$button-bg-green-lighter: #18B6C9;
+$button-bg-green-gradient: #8EBF13;
+$button-bg-blue-black: #133555;
+$explain-popup-bg: #204168;
+$time-text-color: #00baff;
+$box-border-other: #dddddd;
+$button-bg-green-dark: #14c76a;
+$green-light: #40c9c5;
+$menu-bg-blue-deep: #17304D;
+$advert-bg: #21466E;
+$advert-wrapper-bg: #2A4C75;
+$advert-wrapper-box-shadow: #5995B3;
+$box-bg-color: #1A3453;
+$box-bg-gradient: #000000;
+$box-color-shut: #102236;
+$box-popup-change-bg: #092240;
+$box-border-blue: #61d4ff;
+$page-title: #05b3fa;
+$pagination-bg-box: #1c385c;
+$pagination-bg: #214D7F;
+$table-th-bg: #1A3E68;
+$table-th-border: #2f5e95;
+$table-scroll-bg: #18304C;
+
+$unit-bg: #297dcc;
+
+$gradient-color-blue: #05aafa;
+$gradient-bg-color: #2e445d;
+
+$text-green: #26eb85;
+
+@mixin input($color, $fontSize, $placeholderColor, $bgColor) {
+  outline: none;
+  border: none;
+  margin: 0;
+  font-size: $fontSize;
+  color: $color;
+  background-color: $bgColor;
+  font-family: Resource Han Rounded CN-Regular;
+  font-weight: 400;
+  //去除ie下的删除按钮代码
+  &::-ms-clear {
+    display: none;
+  }
+  &::-ms-reveal {
+    display: none;
+  }
+  //去除edge下的删除按钮
+  &::-o-clear {
+    display: none;
+  }
+  // input提示文字；placeholder字体修改
+  &::-webkit-input-placeholder {
+    color: $placeholderColor;
+    font-size: $fontSize;
+  }
+  &::-moz-placeholder {
+    color: $placeholderColor;
+    font-size: $fontSize;
+  }
+  &::-moz-placeholder {
+    color: $placeholderColor;
+    font-size: $fontSize;
+  }
+  &::-ms-input-placeholder {
+    color: $placeholderColor;
+    font-size: $fontSize;
+  }
+}
+
+@mixin black_white_line_top{
+  @include black_white_line(0px);
+  &::after{
+    top: 0;
+  }
+}
+
+
+
+// 统一的输入框阴影
+.input_shadow {
+  box-shadow: 
+      inset 0px 1px 0px 0px rgba($color: $box-bg-gradient, $alpha: 0.3),
+      inset 0px -1px 0px 0px rgba($color: $text-primary, $alpha: 0.15);
+}
+
+// 按钮大小
+@mixin button_size($width, $height) {
+  width: $width;
+  height: $height;
+  line-height: $height;
+}
+
+// 一行文本溢出显示省略号
+@mixin text_ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// 多行文本溢出显示省略号
+@mixin text_line($num) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $num;
+  overflow: hidden;
+}
+
+// 盒子模型
+@mixin border_box($padding, $flag) {
+  padding: $padding;
+  @if $flag == true {
+    box-sizing: border-box;
+  } @else {
+    box-sizing: content-box;
+  }
+}
+
+// 文字渐变
+@mixin text_gradient($color, $direction, $start, $end) {
+  background-color: $color;
+  background-image: linear-gradient($direction, $start, $end);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// 盒子渐变
+@mixin box_gradient($color, $direction, $start, $end) {
+  background-color: $color;
+  background-image: linear-gradient($direction, $start, $end);
+}
+
+// 弹性盒子基础方式
+@mixin flex($diretion, $row, $column) {
+  display: flex;
+  flex-direction: $diretion;
+  justify-content: $row;
+  align-items: $column;
+}
+
+// 磨砂
+@mixin box_colorful($width, $height, $radius) {
+  width: $width;
+  height: $height;
+  border-radius: $radius;
+
+}
+
+@mixin after_element_bg( $width, $height, $url, $top, $left, $isTop, $isLeft) {
+  position: relative;
+  &::after {
+    display: block;
+    content: '';
+    position: absolute;
+    width: $width;
+    height: $height;
+    background-image: url($url);
+    background-size: 100% 100%;
+    
+    @if $isTop {
+      top: $top;
+    } 
+    @else {
+      bottom: $top;
+    }
+
+    @if $isLeft {
+      left: $left;
+    } 
+    @else {
+      right: $left;
+    }
+  }
+}
+
+@mixin box_colorful_shadow() {
+  box-shadow: 0px 2px 4px 2px rgba($color: $box-bg-gradient, $alpha: 0.15);
+}
+
+@mixin box_colorful_shadow_full_black() {
+  box-shadow: 0px 2px 4px 2px rgba($color: $box-bg-gradient, $alpha: 0.3); 
+}
+
+
+// pf-input组件 图片高度与$padding一样的样式
+@mixin input_init_mixin($width, $height, $radius, $padding, $state) {
+  width: $width;
+  height: $height;
+  border-radius: $radius;
+
+  // 前后都没有图片
+  @if $state == 1 {
+    > input.pf-input-inner {
+      padding: 0 $padding;
+    }
+  }
+
+  // 图片在前
+  @if $state == 2 {
+    &.pf-input-prepend {
+      > input.pf-input-inner {
+        padding: 0 $padding 0 calc($padding * 3);
+      }
+
+      > span.pf-input-part {
+        left: $padding;
+      }
+    }
+
+    > span.pf-input-part {
+      height: $padding;
+
+      > img {
+        width: $padding;
+        height: $padding;
+      }
+    }
+  }
+
+  // 图片在后
+  @if $state == 3 {
+    &.pf-input-append {
+      > input.pf-input-inner {
+        padding: 0 calc($padding * 3) 0 $padding;
+      }
+
+      > span.pf-input-part {
+        right: $padding;
+      }
+    }
+
+    > span.pf-input-part {
+      height: $padding;
+
+      > img {
+        width: $padding;
+        height: $padding;
+      }
+    }
+  }
+}
+
+// 文字固定宽度平分且不换行
+@mixin text_justify {
+  text-align: justify;
+  white-space: nowrap;
+}
+
+// pf-button is-round
+@mixin button_round($width, $height, $radius, $left) {
+  width: $width;
+  height: $height;
+  position: relative;
+  @include flex(row, center, center);
+  @include border_box(5px, true);
+  &:not(:first-child) {
+    margin-left: $left;
+  }
+  &::after {
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: '';
+    width: $width;
+    height: $height;
+    border-radius: $radius;
+    background: rgba($color: $box-bg-gradient, $alpha: 0.1);
+    border: 1px solid rgba($color: $button-bg-blue-light, $alpha: 0.3);
+    box-sizing: border-box;
+  }
+  > button.pf-button {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    @include flex(row, center, center);
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// 滚动条样式
+@mixin scroll( $width, $bgColor ) {
+  overflow: hidden;
+  &::-webkit-scrollbar {
+    width: $width;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    // background: rgba($color: $text-primary, $alpha: 0.3);
+    background: $bgColor;
+  }
+
+  &::-webkit-scrollbar-track {
+    width: $width;
+    background: rgba($color: $text-primary, $alpha: 0.1);
+    border-radius: 4px;
+  }
+
+}
+
+@mixin scroll_y( $height, $bgColor ) {
+  overflow: hidden;
+  &::-webkit-scrollbar {
+    height: $height;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    // background: rgba($color: $text-primary, $alpha: 0.3);
+    background: $bgColor;
+  }
+
+  &::-webkit-scrollbar-track {
+    height: $height;
+    background: rgba($color: $text-primary, $alpha: 0.1);
+    border-radius: 4px;
+  }
+
+}
+
+
+@mixin scroll_all( $width, $height ) {
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $height;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background: rgba($color: $text-primary, $alpha: 0.3);
+  }
+
+  &::-webkit-scrollbar-track {
+    width: $width;
+    height: $height;
+    background: rgba($color: $text-primary, $alpha: 0.1);
+    border-radius: 4px;
+  }
+
+}
+
