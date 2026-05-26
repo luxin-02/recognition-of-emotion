@@ -1,11 +1,6 @@
 <template>
   <div class="report_details">
-    <div class="module_title">
-      <i>-----------</i>
-      <img src="@/assets/img/front/report/1.png" />
-      {{ $route.meta.title }}
-      <i>-----------</i>
-    </div>
+    <div class="module_title">报告详情</div>
 
     <div class="class_title">心理评估分析报告</div>
     <div class="content_wrap">
@@ -294,37 +289,30 @@ export default {
 
 <style scoped lang="scss">
 .report_details {
-  width: 1560px;
-  height: 800px;
+  width: 1580px;
+  height: 872px;
   position: absolute;
-  top: 43%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-image: url(@/assets/img/front/index/biankuang.png);
+  background-image: url(@/assets/img/front/index/kuang.png);
   background-size: 100% 100%;
   box-sizing: border-box;
-  padding: 155px 70px 0 70px;
+  padding: 190px 70px 0 70px;
 
   .module_title {
     position: absolute;
-    top: 55px;
+    top: 90px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 24px;
-    font-family: "ziyuanyuanti500W";
+    font-size: 32px;
+    height: 33px;
+    line-height: 33px;
+    font-family: "ziyuanyuanti600W";
     color: #fff;
-    > img {
-      width: 60px;
-      height: 60px;
-    }
-    > i {
-      font-size: 30px;
-      font-weight: 400;
-      font-family: "ziyuanyuanti400W";
-      color: #aed6ffad;
-      display: inline-block;
-      margin: 0 10px;
-    }
+    background: linear-gradient(0deg, #85a7ff 0%, #ffffff 100%);
+    -webkit-background-clip: text;
+    color: transparent;
   }
   .class_title {
     width: 100%;

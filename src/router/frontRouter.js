@@ -297,6 +297,20 @@ export default [
           title: "游戏列表",
         },
       },
+      {
+        path: "/smileCheck",
+        component: () => import("@/views/front/views/smileCheck/index.vue"),
+        meta: {
+          title: "微笑打卡",
+        },
+      },
+      {
+        path: "/smileCheck/statistics",
+        component: () => import("@/views/front/views/smileCheck/statistics.vue"),
+        meta: {
+          title: "微笑打卡统计",
+        },
+      },
     ],
   },
 ]

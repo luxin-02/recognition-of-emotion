@@ -1,24 +1,8 @@
 <template>
   <div class="index">
-    <div class="module_title">报告列表</div>
+    <div class="module_title">记录详情</div>
     <div class="top_opt">
-      <div class="left_btn">
-        报告类型 :
-        <el-cascader
-          v-model="reportType"
-          :options="options"
-          label="value"
-          @change="
-            (e) => {
-              reportType = e[0]
-            }
-          "
-          :props="{
-            value: 'value',
-            label: 'value',
-          }"
-        ></el-cascader>
-      </div>
+      <div class="left_btn"></div>
 
       <div class="search_wrap">
         输入姓名 :
@@ -52,12 +36,12 @@
     <div class="list_wrap">
       <ul v-if="reportType == '测评报告'">
         <li class="roof">
-          <div class="w200" style="text-align: center">测评用户</div>
+          <div class="w200" style="text-align: center">打卡用户</div>
           <div class="w200">所在部门</div>
           <div class="w100">性别</div>
           <div class="w200">账号</div>
-          <div class="w300">测评量表</div>
-          <div class="w150">生成日期</div>
+          <div class="w300">微笑指数</div>
+          <div class="w150">打卡日期</div>
           <div class="w200">编辑</div>
         </li>
         <li
@@ -118,8 +102,6 @@
 
       <div class="btn_box">
         <button class="look" @click="lookFn">查看</button>
-        <button class="export" @click="exportWord">导出</button>
-        <button class="print" @click="printFn">打印</button>
         <button class="del" @click="delFn">删除</button>
       </div>
     </div>
@@ -145,45 +127,23 @@
       </button>
     </div>
 
-    <print
-      ref="print"
-      :reportData="infoData"
-      :type="reportType"
-      :chartImg="chartImg"
-    />
-
-    <div class="radarMap" id="radarMap" v-show="false"></div>
+    <shootDetails :show.sync="shootDetailsShow"/>
   </div>
 </template>
 
 <script>
-import Print from "./print.vue"
-import {
-  frontGaugeReportApiList,
-  frontGaugeReportApiInfo,
-  frontGaugeReportApiDel,
-} from "@/server/api/guage"
-import { reportApiList, reportApiInfo, reportApiDel } from "@/server/api/report"
-import * as echarts from "echarts"
 import { deptApiList } from "@/server/api/dept"
-import { exportWord } from "@/utils/export"
+import shootDetails from "@/views/front/views/smileCheck/components/shootDetails.vue"
+import Shoot from "./components/shoot.vue"
 export default {
-  components: { Print },
+  components: {
+    shootDetails,
+    Shoot,
+  },
   data() {
     return {
       reportList: { list: [], page: 1, total: 0, page_size: 6 },
       reportType: "测评报告",
-      options: [
-        {
-          value: "测评报告",
-        },
-        {
-          value: "心理训练",
-        },
-        // {
-        //   value: "放松调节",
-        // },
-      ],
       depList: [],
       depId: "",
       searchName: "",
@@ -191,19 +151,10 @@ export default {
       detailsId: "",
       infoData: {},
       chartImg: "",
+      shootDetailsShow: false,
     }
   },
-  watch: {
-    reportType(newv) {
-      this.reportList.page = 1
-      this.detailsId = ""
-      if (newv == "测评报告") {
-        this.getScaleReport()
-      } else {
-        this.getReportList()
-      }
-    },
-  },
+  watch: {},
   created() {
     this.searchBtn()
     this.getdep()
@@ -219,59 +170,10 @@ export default {
     selectChange(e) {
       this.depId = e
     },
-    async getScaleReport(page) {
-      try {
-        if (page) {
-          this.reportList.page = page
-        }
-        this.listLoading = true
-        const { data } = await frontGaugeReportApiList({
-          class_id: this.depId,
-          page: this.reportList.page,
-          page_size: this.reportList.page_size,
-          title: this.searchName,
-        })
-        if (data.code == this.$global.successCode) {
-          console.log(data.data)
-          this.reportList.list = data.data.list
-          this.reportList.total = data.data.total
-        }
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.listLoading = false
-      }
-    },
-    async getReportList(page) {
-      if (page) {
-        this.reportList.page = page
-      }
-      this.listLoading = true
-      try {
-        const { data } = await reportApiList({
-          page: this.reportList.page,
-          page_size: this.reportList.page_size,
-          title: this.searchName,
-          class_id: this.depId,
-          cat_name: this.reportType,
-        })
-        if (data.code == this.$global.successCode) {
-          this.reportList.list = data.data
-          this.reportList.total = data.total
-        }
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.listLoading = false
-      }
-    },
+
     searchBtn() {
       this.reportList.page = 1
-      if (this.reportType == "测评报告") {
-        this.getScaleReport()
-      } else {
-        this.getReportList()
-      }
+      //   this.getScaleReport()
     },
     reset() {
       this.searchName = ""
@@ -279,24 +181,21 @@ export default {
       this.detailsId = ""
       this.searchBtn()
     },
-    changePage(page) {
-      this.reportType == "测评报告"
-        ? this.getScaleReport(page)
-        : this.getReportList(page)
-    },
+
     lookFn() {
+      this.shootDetailsShow = true
       if (this.detailsId == "")
         return this.$myMessage({
           type: "font-error",
           message: "请选择一条数据查看!",
         })
-      this.$router.push({
-        path: "/report/details",
-        query: {
-          id: this.detailsId,
-          type: this.reportType,
-        },
-      })
+      //   this.$router.push({
+      //     path: "/report/details",
+      //     query: {
+      //       id: this.detailsId,
+      //       type: this.reportType,
+      //     },
+      //   })
     },
     async delFn() {
       this.$popup({
@@ -309,254 +208,19 @@ export default {
               message: "请选择一条报告!",
             })
             return
-          }
-          if (this.reportType == "测评报告") {
-            await frontGaugeReportApiDel({
-              ids: this.detailsId,
-            }).then(() => {
-              this.$myMessage({
-                type: "font-success",
-                message: "删除成功!",
-              })
-              this.detailsId = ""
-              if (this.reportList.total !== 1) {
-                if (this.reportList.list.length == 1) {
-                  this.getScaleReport(this.reportList.page - 1)
-                } else {
-                  this.getScaleReport()
-                }
-              } else {
-                this.getScaleReport()
-              }
-            })
-          } else {
-            await reportApiDel({
-              ids: this.detailsId,
-            }).then(() => {
-              this.$myMessage({
-                type: "font-success",
-                message: "删除成功!",
-              })
-              this.detailsId = ""
-              if (this.reportList.total !== 1) {
-                if (this.reportList.list.length == 1) {
-                  this.getReportList(this.reportList.page - 1)
-                } else {
-                  this.getReportList()
-                }
-              } else {
-                this.getReportList()
-              }
-            })
+            //    this.$myMessage({
+            //     type: "font-success",
+            //     message: "删除成功!",
+            //   })
           }
         },
       })
     },
-
-    async printFn() {
-      if (this.detailsId == "")
-        return this.$myMessage({
-          type: "font-error",
-          message: "请选择一条数据!",
-        })
-      if (this.reportType == "测评报告") {
-        const { data } = await frontGaugeReportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = data.data
-          let indicator = []
-          let series = []
-          data.data.record_result.forEach((item) => {
-            indicator.push({ name: item.gradeName, max: 100 })
-            series.push(item.prop)
-          })
-
-          this.radarMapChartFn(indicator, series)
-          this.$nextTick(async () => {
-            this.$refs.print.print(this.infoData.nickname + "的报告详情")
-          })
-        }
-      } else {
-        const { data } = await reportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = {
-            ...data.data,
-            ...data.data.userinfo,
-            gauge_title: data.data.game_name,
-            total_seconds: data.data.seconds,
-            add_time: data.data.add_time,
-          }
-          this.$nextTick(async () => {
-            this.$refs.print.print(this.infoData.nickname + "的报告详情")
-          })
-        }
-      }
-    },
-    async exportWord() {
-      if (this.detailsId == "")
-        return this.$myMessage({
-          type: "font-error",
-          message: "请选择一条数据!",
-        })
-      if (this.reportType == "测评报告") {
-        const { data } = await frontGaugeReportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = data.data
-          let indicator = []
-          let series = []
-          data.data.record_result.forEach((item) => {
-            indicator.push({ name: item.gradeName, max: 100 })
-            series.push(item.prop)
-          })
-          this.radarMapChartFn(indicator, series)
-        }
-      } else {
-        const { data } = await reportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = {
-            ...data.data,
-            ...data.data.userinfo,
-            gauge_title: data.data.game_name,
-            total_seconds: data.data.seconds,
-            add_time: data.data.add_time,
-          }
-        }
-      }
-
-      // return;
-      this.$nextTick(() => {
-        let name = this.infoData.nickname + "的报告详情"
-        if (this.infoData.record_result) {
-          var record_result = this.infoData.record_result.map((element) => {
-            return {
-              ...element,
-              result: element.result.replace(/<[^>]+>/g, ""),
-            }
-          })
-        }
-        if (this.infoData.recommend) {
-          this.infoData.recommend = this.infoData.recommend.map((element) => {
-            return {
-              text: element,
-            }
-          })
-        }
-        function fn(s) {
-          if (!s) return ""
-          return s.replace(/<br[ ]*\/>/g, "")
-        }
-        let docx = {
-          name: name,
-          ...this.infoData,
-          result: fn(this.infoData.result),
-          remark: fn(this.infoData.remark),
-          suggest: fn(this.infoData.suggest),
-          record_result,
-          add_time: this.$formatDate(
-            this.infoData.add_time * 1000,
-            "yyyy-MM-dd",
-          ),
-          total_seconds: this.$formatTime(
-            this.infoData.total_seconds,
-            "HHH:mmm:ss",
-          ),
-          userType: this.$store.getters.roleInfo.name,
-          img: this.chartImg,
-        }
-        if (this.reportType == "测评报告") {
-          exportWord("/docxTemplate/测评报告.docx", docx, name, {
-            otherSize: {
-              img: [550, 300],
-            },
-          })
-        } else {
-          exportWord("/docxTemplate/训练报告.docx", docx, name)
-        }
-      })
-    },
-    radarMapChartFn(indicator, series) {
-      var myChart = echarts.init(document.getElementById("radarMap"))
-      let option = {
-        animation: false, // 关闭动画
-        // 设置背景颜色与页面容器一致
-        backgroundColor: "#08204780",
-        legend: {
-          data: ["Allocated Budget", "Actual Spending"],
-        },
-        radar: {
-          // 也可以设置雷达图本身的背景色
-          shape: "polygon",
-          splitNumber: 6, // 六边形
-          radius: "80%",
-          startAngle: 90, // 起始角度
-          name: {
-            textStyle: {
-              color: "#fff", // 指标名称颜色
-              fontSize: 18, // 指标名称大小
-              fontFamily: "ziyuanyuanti400W", // 字体家族
-            },
-          },
-          splitArea: {
-            areaStyle: {
-              color: ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"],
-            },
-          },
-          axisLine: {
-            lineStyle: {
-              color: "rgba(255, 255, 255, 0.5)",
-            },
-          },
-          splitLine: {
-            lineStyle: {
-              color: "rgba(255, 255, 255, 0.3)",
-            },
-          },
-          indicator: indicator,
-        },
-        series: [
-          {
-            name: "",
-            type: "radar",
-            areaStyle: {
-              color: "rgba(0, 174, 255, 0.3)", // 数据区域填充色
-            },
-            lineStyle: {
-              color: "#00aeff", // 线条颜色
-            },
-            itemStyle: {
-              color: "#00aeff", // 数据点颜色
-            },
-            data: [
-              {
-                value: series,
-              },
-            ],
-          },
-        ],
-      }
-
-      option && myChart.setOption(option)
-      this.chartImg = myChart.getDataURL(option)
+    changePage(page) {
+      this.reportList.page = page
     },
   },
-  activated() {
-    if (this.Ls_firstComplete) {
-      if (this.reportType == "测评报告") {
-        this.getScaleReport()
-      } else {
-        this.getReportList()
-      }
-    } else {
-      this.Ls_firstComplete = true
-    }
-  },
+  activated() {},
 }
 </script>
 
@@ -707,7 +371,7 @@ export default {
       width: 1350px;
       height: 42px;
       display: flex;
-      background: #00173c;
+      background: #0b3abe;
       > div {
         font-size: 20px;
         color: #ffffff;
@@ -808,11 +472,6 @@ export default {
     position: absolute;
     left: 80px;
     bottom: 90px;
-  }
-  .radarMap {
-    width: 1000px;
-    height: 500px;
-    margin: 0 auto;
   }
 
   .pagination {

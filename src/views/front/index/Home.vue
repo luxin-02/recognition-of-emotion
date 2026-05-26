@@ -27,7 +27,7 @@
           <div class="user_info">
             <div>姓名：{{ $store.getters.userInfo.nickname }}</div>
             <div>账号：{{ $store.getters.userInfo.username }}</div>
-            <div  v-if=" $store.getters.userInfo.depts.length">
+            <div v-if="$store.getters.userInfo.depts.length">
               部门：{{
                 $store.getters.userInfo.depts.length
                   ? $store.getters.userInfo.depts[0].class_name
@@ -46,12 +46,15 @@
             </div>
             <br />
             <div class="synthetical_title"><i></i>训练数据详情：</div>
-            <div id="data_chart"></div>
+            <div
+              id="data_chart"
+              :style="{ transform: `scale(${scale})` }"
+            ></div>
           </div>
         </div>
         <div class="middle">
           <div>
-            <div><i>微笑打卡</i></div>
+            <div @click="$router.push('/smileCheck')"><i>微笑打卡</i></div>
             <div><i>情绪检测</i></div>
           </div>
           <div>
@@ -69,9 +72,9 @@
         </div>
         <div class="right">
           <div @click="$router.push('/clockIn')"><i>心情记录</i></div>
-          <div><i>心理体验</i></div>
+          <div @click="$router.push('/gameList')"><i>心理体验</i></div>
           <div @click="$router.push('/scale')"><i>心理评估</i></div>
-          <div><i>报告中心</i></div>
+          <div @click="$router.push('/report')"><i>报告中心</i></div>
         </div>
       </div>
     </div>
@@ -85,7 +88,9 @@ import { frontApiSettingInfoInLogin } from "@/server/api/system"
 import { userBackApiLogout } from "@/server/api/user.js"
 import { getTodayMoodRecord } from "@/server/api/mood"
 import * as echarts from "echarts"
+import scaleMixin from "@/mixins/scaleMixin"
 export default {
+  mixins: [scaleMixin],
   data() {
     return {
       todayMood: "",
@@ -434,8 +439,9 @@ export default {
             }
           }
           #data_chart {
-            width: 430px;
-            height: 140px;
+            width: 430PX;
+            height: 140PX;
+            transform-origin: 0 0;
           }
         }
       }

@@ -1,11 +1,6 @@
 <template>
   <div class="user-info-box">
-    <div class="module_title">
-      <i>-----------</i>
-      <img src="@/assets/images/1.png" />
-      {{ $route.meta.title }}
-      <i>-----------</i>
-    </div>
+    <div class="module_title">游戏列表</div>
     <ul v-if="imgList.length > 0">
       <li
         v-for="(item, index) in imgList"
@@ -110,39 +105,32 @@ export default {
 
 <style lang="scss" scoped>
 div.user-info-box {
-  width: 1560px;
-  height: 760px;
+  width: 1580px;
+  height: 872px;
   position: absolute;
-  top: 44%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-image: url(@/assets/img/front/index/biankuang.png);
+  background-image: url(@/assets/img/front/index/kuang.png);
   background-size: 100% 100%;
   .module_title {
     position: absolute;
-    top: 55px;
+    top: 90px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 24px;
-    font-family: "ziyuanyuanti500W";
+    font-size: 32px;
+    height: 33px;
+    line-height: 33px;
+    font-family: "ziyuanyuanti600W";
     color: #fff;
-    > img {
-      width: 60px;
-      height: 60px;
-    }
-    > i {
-      font-size: 30px;
-      font-weight: 400;
-      font-family: "ziyuanyuanti400W";
-      color: #aed6ffad;
-      display: inline-block;
-      margin: 0 10px;
-    }
+    background: linear-gradient(0deg, #85a7ff 0%, #ffffff 100%);
+    -webkit-background-clip: text;
+    color: transparent;
   }
   > ul {
     display: flex;
     flex-wrap: wrap;
-    padding: 160px 280px 0 280px;
+    padding: 210px 280px 0 280px;
 
     > li {
       width: 210px;

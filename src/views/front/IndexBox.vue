@@ -228,6 +228,12 @@ export default {
       color: #ffffff;
       margin-left: 9px;
     }
+    .logo{
+      >img{
+        width: 30px;
+        height: 30px;
+      }
+    }
   }
   .right_top_bar {
     height: 50px;

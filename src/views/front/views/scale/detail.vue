@@ -1,16 +1,7 @@
 <template>
   <div class="index">
     <div class="brainwaveGame">
-      <div class="module_title">
-        <img src="@/assets/img/front/scale/1.png" alt="" />
-        评估简介
-        <i>-----------</i>
-        <img src="@/assets/img/front/scale/22.png" alt="" />
-        心理评估
-        <i>-----------</i>
-        <img src="@/assets/img/front/scale/3.png" alt="" />
-        评估分析
-      </div>
+      <div class="module_title">评估详情</div>
       <div class="content_box">
         <div class="right">
           <p class="right_title">{{ topicTpye.info.title }}</p>
@@ -451,37 +442,29 @@ export default {
   }
 }
 .brainwaveGame {
-  width: 1500px;
-  height: 810px;
+  width: 1580px;
+  height: 872px;
   position: absolute;
   left: 50%;
-  top: 43%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  padding: 160px 0 0 80px;
+  padding: 200px 0 0 100px;
   box-sizing: border-box;
-  background-image: url(@/assets/img/front/index/biankuang.png);
+  background-image: url(@/assets/img/front/index/kuang.png);
   background-size: 100% 100%;
   .module_title {
-    width: 800px;
     position: absolute;
-    top: 60px;
+    top: 95px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 24px;
-    font-family: "ziyuanyuanti500W";
+    font-size: 32px;
+    height: 33px;
+    line-height: 33px;
+    font-family: "ziyuanyuanti600W";
     color: #fff;
-    > img {
-      width: 60px;
-      height: 60px;
-    }
-    > i {
-      font-size: 30px;
-      font-weight: 400;
-      font-family: "ziyuanyuanti400W";
-      color: #aed6ffad;
-      display: inline-block;
-      margin: 0 10px;
-    }
+    background: linear-gradient(0deg, #85a7ff 0%, #ffffff 100%);
+    -webkit-background-clip: text;
+    color: transparent;
   }
 
   .content_box {
@@ -518,7 +501,7 @@ export default {
           background: rgba(164, 164, 164, 0.1);
           border: 1px solid #0080ff;
           border-radius: 8px;
-          box-shadow: 0px 0px 13px 0px #0080ff;
+          box-shadow: 0px 0px 13px 0px #285bf0;
           margin: 20px auto 0 auto;
           text-align: center;
           line-height: 80px;
@@ -526,7 +509,7 @@ export default {
           font-size: 40px;
           font-family: "ziyuanyuanti600W";
           font-weight: 600;
-          color: #00a6ff;
+          color: #285bf0;
         }
       }
       .topicNumber_box {
@@ -572,7 +555,7 @@ export default {
         .submit {
           width: 100%;
           height: 40px;
-          background: #008aff;
+          background: #285bf0;
           border-radius: 4px;
           margin: 0 auto;
           text-align: center;
@@ -659,9 +642,9 @@ export default {
     }
 
     .right {
-      width: 880px;
+      width: 900px;
       height: 560px;
-      margin-right: 20px;
+      margin-right: 40px;
       border-radius: 20px;
       background-color: #082047;
       position: relative;
@@ -675,7 +658,7 @@ export default {
         text-align: left;
         letter-spacing: 1.8px;
         margin: 20px 0 0 40px;
-        color: #00b4ff;
+        color: #4375FF;
       }
       .questionTypes {
         font-size: 14px;
@@ -726,7 +709,7 @@ export default {
           margin-bottom: 20px;
           box-sizing: border-box;
           color: #fff;
-          box-shadow: 0px 0px 20px 0px rgba(0, 192, 255, 0.65) inset;
+          box-shadow: 0px 0px 20px 0px rgba(0, 132, 255, 0.65) inset;
           background: #002345, rgba(192, 192, 192, 0);
           border: 1px solid #0080ff;
 
@@ -737,10 +720,10 @@ export default {
         }
         .active {
           color: #fff;
-          background: rgba(0, 149, 255, 0.7);
+          background: #214fcf;
           border: 1px solid #81d4ff;
           border-radius: 5px;
-          box-shadow: 0px 0px 20px 0px #0078ff, 0px 0px 59px 0px #008aff inset;
+          box-shadow: 0px 0px 20px 0px #214fcf, 0px 0px 59px 0px #214fcf inset;
         }
       }
 
@@ -757,7 +740,7 @@ export default {
           font-family: "ziyuanyuanti400W";
           color: #fefefe;
           margin-right: 20px;
-          background: #008aff;
+          background: #285BF0;
           // &:active {
           //   background-color: #5fafff;
           // }
