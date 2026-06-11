@@ -66,16 +66,22 @@
 </template>
 
 <script>
+import { smileClockDetail } from "@/server/api/smileCheck"
 export default {
   data() {
     return {
       isShow: false,
+      detailData: null,
     }
   },
   props: {
     show: {
       type: Boolean,
       default: false,
+    },
+    detailsId: {
+      type: String,
+      default: "",
     },
   },
 
@@ -88,11 +94,29 @@ export default {
     cancel() {
       this.isShow = false
       this.$emit("update:show", false)
+      this.detailData = null
+    },
+
+    async getDetails() {
+      if (this.detailsId) {
+        const { data } = await smileClockDetail({
+          id: this.detailsId,
+        })
+        if (data.code == this.$global.successCode) {
+          this.detailData = data.data
+          console.log(this.detailData)
+        }
+      }
     },
   },
   watch: {
     show(newV) {
       this.isShow = newV
+      if (newV) {
+        this.getDetails()
+      } else {
+        this.detailData = null
+      }
     },
   },
 }

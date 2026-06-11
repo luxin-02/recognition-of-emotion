@@ -151,13 +151,23 @@
       :type="reportType"
       :chartImg="chartImg"
     />
+    <emotionPrint
+      ref="emotionPrint"
+      :reportData="infoData"
+      :chartImg="chartImg"
+      :emotionChartImg1="emotionChartImg1"
+      :emotionChartImg2="emotionChartImg2"
+    />
 
     <div class="radarMap" id="radarMap" v-show="false"></div>
+    <div id="roseChart" v-show="false"></div>
+    <div id="barGraph" v-show="false"></div>
   </div>
 </template>
 
 <script>
 import Print from "./print.vue"
+import EmotionPrint from "./emotionPrint.vue"
 import {
   frontGaugeReportApiList,
   frontGaugeReportApiInfo,
@@ -168,21 +178,15 @@ import * as echarts from "echarts"
 import { deptApiList } from "@/server/api/dept"
 import { exportWord } from "@/utils/export"
 export default {
-  components: { Print },
+  components: { Print, EmotionPrint },
   data() {
     return {
       reportList: { list: [], page: 1, total: 0, page_size: 6 },
       reportType: "测评报告",
       options: [
-        {
-          value: "测评报告",
-        },
-        {
-          value: "心理训练",
-        },
-        // {
-        //   value: "放松调节",
-        // },
+        { value: "测评报告" },
+        { value: "心理训练" },
+        { value: "检测报告" },
       ],
       depList: [],
       depId: "",
@@ -191,6 +195,25 @@ export default {
       detailsId: "",
       infoData: {},
       chartImg: "",
+      emotionChartImg1: "",
+      emotionChartImg2: "",
+      Ls_firstComplete: false,
+      emotionIndicators: [
+        { name: "悲伤", max: 100 },
+        { name: "愤怒", max: 100 },
+        { name: "恐惧", max: 100 },
+        { name: "快乐", max: 100 },
+        { name: "惊讶", max: 100 },
+      ],
+      barColors: [
+        "#18c8ff",
+        "#ffee00",
+        "#18d27c",
+        "#18c8ff",
+        "#ffee00",
+        "#18c8ff",
+        "#5d5dff",
+      ],
     }
   },
   watch: {
@@ -280,22 +303,19 @@ export default {
       this.searchBtn()
     },
     changePage(page) {
-      this.reportType == "测评报告"
-        ? this.getScaleReport(page)
-        : this.getReportList(page)
+      this.reportType === "测评报告" ? this.getScaleReport(page) : this.getReportList(page)
     },
     lookFn() {
-      if (this.detailsId == "")
+      if (!this.detailsId) {
         return this.$myMessage({
           type: "font-error",
           message: "请选择一条数据查看!",
         })
+      }
+      const path = this.reportType === "检测报告" ? "/report/emotionReport" : "/report/details"
       this.$router.push({
-        path: "/report/details",
-        query: {
-          id: this.detailsId,
-          type: this.reportType,
-        },
+        path,
+        query: { id: this.detailsId, type: this.reportType },
       })
     },
     async delFn() {
@@ -304,181 +324,102 @@ export default {
         content: "是否确认删除？",
         saveFoo: async () => {
           if (!this.detailsId) {
-            this.$myMessage({
-              type: "font-error",
-              message: "请选择一条报告!",
-            })
+            this.$myMessage({ type: "font-error", message: "请选择一条报告!" })
             return
           }
-          if (this.reportType == "测评报告") {
-            await frontGaugeReportApiDel({
-              ids: this.detailsId,
-            }).then(() => {
-              this.$myMessage({
-                type: "font-success",
-                message: "删除成功!",
-              })
-              this.detailsId = ""
-              if (this.reportList.total !== 1) {
-                if (this.reportList.list.length == 1) {
-                  this.getScaleReport(this.reportList.page - 1)
-                } else {
-                  this.getScaleReport()
-                }
-              } else {
-                this.getScaleReport()
-              }
-            })
-          } else {
-            await reportApiDel({
-              ids: this.detailsId,
-            }).then(() => {
-              this.$myMessage({
-                type: "font-success",
-                message: "删除成功!",
-              })
-              this.detailsId = ""
-              if (this.reportList.total !== 1) {
-                if (this.reportList.list.length == 1) {
-                  this.getReportList(this.reportList.page - 1)
-                } else {
-                  this.getReportList()
-                }
-              } else {
-                this.getReportList()
-              }
-            })
-          }
+          const deleteApi = this.reportType === "测评报告" ? frontGaugeReportApiDel : reportApiDel
+          const getList = this.reportType === "测评报告" ? this.getScaleReport : this.getReportList
+
+          await deleteApi({ ids: this.detailsId }).then(() => {
+            this.$myMessage({ type: "font-success", message: "删除成功!" })
+            this.detailsId = ""
+            const needPrevPage = this.reportList.total !== 1 && this.reportList.list.length === 1
+            getList(needPrevPage ? this.reportList.page - 1 : undefined)
+          })
         },
       })
     },
 
-    async printFn() {
-      if (this.detailsId == "")
-        return this.$myMessage({
-          type: "font-error",
-          message: "请选择一条数据!",
+    async fetchReportInfo() {
+      if (this.reportType === "测评报告") {
+        const { data } = await frontGaugeReportApiInfo({ id: this.detailsId })
+        if (data.code !== this.$global.successCode) return null
+        this.infoData = data.data
+        const indicator = []
+        const series = []
+        data.data.record_result.forEach((item) => {
+          indicator.push({ name: item.gradeName, max: 100 })
+          series.push(item.prop)
         })
-      if (this.reportType == "测评报告") {
-        const { data } = await frontGaugeReportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = data.data
-          let indicator = []
-          let series = []
-          data.data.record_result.forEach((item) => {
-            indicator.push({ name: item.gradeName, max: 100 })
-            series.push(item.prop)
-          })
-
-          this.radarMapChartFn(indicator, series)
-          this.$nextTick(async () => {
-            this.$refs.print.print(this.infoData.nickname + "的报告详情")
-          })
-        }
+        this.radarMapChartFn(indicator, series)
+        return { isScale: true }
       } else {
-        const { data } = await reportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = {
-            ...data.data,
-            ...data.data.userinfo,
-            gauge_title: data.data.game_name,
-            total_seconds: data.data.seconds,
-            add_time: data.data.add_time,
-          }
-          this.$nextTick(async () => {
-            this.$refs.print.print(this.infoData.nickname + "的报告详情")
-          })
+        const { data } = await reportApiInfo({ id: this.detailsId })
+        if (data.code !== this.$global.successCode) return null
+        this.infoData = {
+          ...data.data,
+          ...data.data.userinfo,
+          gauge_title: data.data.game_name,
+          total_seconds: data.data.seconds,
+          add_time: data.data.add_time,
         }
+        this.radarMapChartFn(this.emotionIndicators, [20, 30, 40, 50, 60])
+        this.roseChartFn()
+        this.barGraphChartFn()
+        return { isScale: this.reportType === "检测报告" ? false : true }
       }
     },
-    async exportWord() {
-      if (this.detailsId == "")
-        return this.$myMessage({
-          type: "font-error",
-          message: "请选择一条数据!",
-        })
-      if (this.reportType == "测评报告") {
-        const { data } = await frontGaugeReportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = data.data
-          let indicator = []
-          let series = []
-          data.data.record_result.forEach((item) => {
-            indicator.push({ name: item.gradeName, max: 100 })
-            series.push(item.prop)
-          })
-          this.radarMapChartFn(indicator, series)
-        }
-      } else {
-        const { data } = await reportApiInfo({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.infoData = {
-            ...data.data,
-            ...data.data.userinfo,
-            gauge_title: data.data.game_name,
-            total_seconds: data.data.seconds,
-            add_time: data.data.add_time,
-          }
-        }
-      }
 
-      // return;
+    async printFn() {
+      if (!this.detailsId) {
+        return this.$myMessage({ type: "font-error", message: "请选择一条数据!" })
+      }
+      const result = await this.fetchReportInfo()
+      if (!result) return
+
       this.$nextTick(() => {
-        let name = this.infoData.nickname + "的报告详情"
+        const title = this.infoData.nickname + "的报告详情"
+        result.isScale ? this.$refs.print.print(title) : this.$refs.emotionPrint.print(title)
+      })
+    },
+    async exportWord() {
+      if (!this.detailsId) {
+        return this.$myMessage({ type: "font-error", message: "请选择一条数据!" })
+      }
+      const result = await this.fetchReportInfo()
+      if (!result) return
+
+      this.$nextTick(() => {
+        const name = this.infoData.nickname + "的报告详情"
+        let record_result
         if (this.infoData.record_result) {
-          var record_result = this.infoData.record_result.map((element) => {
-            return {
-              ...element,
-              result: element.result.replace(/<[^>]+>/g, ""),
-            }
-          })
+          record_result = this.infoData.record_result.map((element) => ({
+            ...element,
+            result: element.result.replace(/<[^>]+>/g, ""),
+          }))
         }
         if (this.infoData.recommend) {
-          this.infoData.recommend = this.infoData.recommend.map((element) => {
-            return {
-              text: element,
-            }
-          })
+          this.infoData.recommend = this.infoData.recommend.map((element) => ({
+            text: element,
+          }))
         }
-        function fn(s) {
-          if (!s) return ""
-          return s.replace(/<br[ ]*\/>/g, "")
-        }
-        let docx = {
-          name: name,
+        const fn = (s) => !s ? "" : s.replace(/<br[ ]*\/>/g, "")
+        const docx = {
+          name,
           ...this.infoData,
           result: fn(this.infoData.result),
           remark: fn(this.infoData.remark),
           suggest: fn(this.infoData.suggest),
           record_result,
-          add_time: this.$formatDate(
-            this.infoData.add_time * 1000,
-            "yyyy-MM-dd",
-          ),
-          total_seconds: this.$formatTime(
-            this.infoData.total_seconds,
-            "HHH:mmm:ss",
-          ),
+          add_time: this.$formatDate(this.infoData.add_time * 1000, "yyyy-MM-dd"),
+          total_seconds: this.$formatTime(this.infoData.total_seconds, "HHH:mmm:ss"),
           userType: this.$store.getters.roleInfo.name,
           img: this.chartImg,
         }
-        if (this.reportType == "测评报告") {
-          exportWord("/docxTemplate/测评报告.docx", docx, name, {
-            otherSize: {
-              img: [550, 300],
-            },
-          })
-        } else {
-          exportWord("/docxTemplate/训练报告.docx", docx, name)
-        }
+        const template = this.reportType === "测评报告" ? "/docxTemplate/测评报告.docx" : "/docxTemplate/训练报告.docx"
+        const options = this.reportType === "测评报告" ? { otherSize: { img: [580, 300] } } : {}
+
+        exportWord(template, docx, name, options)
       })
     },
     radarMapChartFn(indicator, series) {
@@ -486,7 +427,7 @@ export default {
       let option = {
         animation: false, // 关闭动画
         // 设置背景颜色与页面容器一致
-        backgroundColor: "#08204780",
+        // backgroundColor: "#08204780",
         legend: {
           data: ["Allocated Budget", "Actual Spending"],
         },
@@ -498,7 +439,7 @@ export default {
           startAngle: 90, // 起始角度
           name: {
             textStyle: {
-              color: "#fff", // 指标名称颜色
+              color: "#333", // 指标名称颜色
               fontSize: 18, // 指标名称大小
               fontFamily: "ziyuanyuanti400W", // 字体家族
             },
@@ -510,12 +451,12 @@ export default {
           },
           axisLine: {
             lineStyle: {
-              color: "rgba(255, 255, 255, 0.5)",
+              color: "#333",
             },
           },
           splitLine: {
             lineStyle: {
-              color: "rgba(255, 255, 255, 0.3)",
+              color: "gray",
             },
           },
           indicator: indicator,
@@ -542,8 +483,121 @@ export default {
         ],
       }
 
-      option && myChart.setOption(option)
+      myChart.setOption(option)
       this.chartImg = myChart.getDataURL(option)
+      setTimeout(() => myChart.dispose(), 100)
+    },
+    roseChartFn() {
+      const myChart = echarts.init(document.getElementById("roseChart"))
+      const option = {
+        animation: false,
+        series: [
+          {
+            name: "roseChart",
+            type: "pie",
+            radius: [50, 230],
+            center: ["50%", "50%"],
+            roseType: "area",
+            itemStyle: {
+              borderRadius: 8,
+            },
+            label: {
+              show: true,
+              position: "outside",
+              fontSize: 20,
+              fontWeight: "bold",
+              color: "#fff",
+              formatter: "{b}：{c}分",
+            },
+            data: [
+              { value: 40, name: "rose1" },
+              { value: 38, name: "rose2" },
+              { value: 32, name: "rose3" },
+              { value: 30, name: "rose4" },
+              { value: 28, name: "rose5" },
+            ],
+          },
+        ],
+      }
+      myChart.setOption(option)
+      this.emotionChartImg1 = myChart.getDataURL(option)
+      setTimeout(() => myChart.dispose(), 100)
+    },
+    barGraphChartFn() {
+      const myChart = echarts.init(document.getElementById("barGraph"))
+      const option = {
+        animation: false,
+        grid: {
+          left: 50,
+          right: 20,
+          top: 100,
+          bottom: 100,
+        },
+        xAxis: {
+          type: "category",
+          data: ["rose1", "rose2", "rose3", "rose4", "rose5", "rose6", "rose7"],
+          axisLine: {
+            lineStyle: {
+              color: "#3d5a98",
+            },
+          },
+          axisTick: {
+            show: false,
+          },
+          axisLabel: {
+            color: "#00cfff",
+            fontSize: 18,
+          },
+        },
+        yAxis: {
+          type: "value",
+          max: 100,
+          axisLine: {
+            show: true,
+            lineStyle: {
+              color: "#3d5a98",
+            },
+          },
+          splitLine: {
+            lineStyle: {
+              color: "rgba(255,255,255,0.08)",
+            },
+          },
+          axisLabel: {
+            color: "#fff",
+            fontSize: 18,
+          },
+        },
+        series: [
+          {
+            type: "bar",
+            data: new Array(7).fill(100),
+            barWidth: 42,
+            barGap: "-100%",
+            itemStyle: {
+              color: "rgba(120,160,220,0.2)",
+              borderRadius: 6,
+            },
+            z: 1,
+          },
+          {
+            type: "pictorialBar",
+            symbol: "roundRect",
+            symbolRepeat: true,
+            symbolMargin: 2,
+            symbolSize: [35, 13],
+            symbolBoundingData: 100,
+            data: [40, 38, 32, 30, 28, 26, 24],
+            z: 2,
+            itemStyle: {
+              color: (params) => this.barColors[params.dataIndex],
+            },
+          },
+        ],
+      }
+      myChart.setOption(option)
+      this.emotionChartImg2 = myChart.getDataURL(option)
+      setTimeout(() => myChart.dispose(), 100)
     },
   },
   activated() {
@@ -812,6 +866,12 @@ export default {
   .radarMap {
     width: 1000px;
     height: 500px;
+    margin: 0 auto;
+  }
+  #roseChart,
+  #barGraph {
+    width: 1000px;
+    height: 510px;
     margin: 0 auto;
   }
 

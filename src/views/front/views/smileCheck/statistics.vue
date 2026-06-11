@@ -33,8 +33,8 @@
       </div>
     </div>
 
-    <div class="list_wrap">
-      <ul v-if="reportType == '测评报告'">
+    <div class="list_wrap" v-loading="listLoading">
+      <ul>
         <li class="roof">
           <div class="w200" style="text-align: center">打卡用户</div>
           <div class="w200">所在部门</div>
@@ -48,8 +48,8 @@
           class="item_wrap"
           v-for="item in reportList.list"
           :key="item.id"
-          :class="[item.report_id == detailsId ? 'active' : '']"
-          @click="detailsId = item.report_id"
+          :class="[item.id == detailsId ? 'active' : '']"
+          @click="detailsId = item.id"
         >
           <div class="w200 txhz">
             <img class="tx" :src="$ip + item.avatar" />
@@ -59,43 +59,11 @@
           <div class="w100">{{ item.sex }}</div>
           <div class="w200">{{ item.username }}</div>
           <div class="w300" style="color: #00a6fc">
-            {{ item.gauge_title }}
+            {{ item.smile_index }}
           </div>
           <div class="w150">
-            {{ $formatDate2(item.add_time * 1000, "yyyy-MM-dd") }}
-          </div>
-        </li>
-      </ul>
-      <ul v-else>
-        <li class="roof">
-          <div class="w300" style="text-align: center">测评用户</div>
-          <div class="w150">所在部门</div>
-          <div class="w100">性别</div>
-          <div class="w150">账号</div>
-          <div class="w300">模式</div>
-          <div class="w150">生成日期</div>
-          <div class="w200">编辑</div>
-        </li>
-        <li
-          class="item_wrap"
-          v-for="item in reportList.list"
-          :key="item.id"
-          :class="[item.id == detailsId ? 'active' : '']"
-          @click="detailsId = item.id"
-        >
-          <div class="w300 txhz">
-            <img class="tx" :src="$ip + item.avatar" />
-            <span> {{ item.nickname }}</span>
-          </div>
-          <div class="w150">{{ item.class_name }}</div>
-          <div class="w100">{{ item.sex }}</div>
-          <div class="w150">{{ item.username }}</div>
-          <div class="w300" style="color: #00a6fc">
-            {{ item.game_name }}
-          </div>
-
-          <div class="w150">
-            {{ $formatDate2(item.add_time * 1000, "yyyy-MM-dd") }}
+            <!-- {{ $formatDate2(item.add_time * 1000, "yyyy-MM-dd") }} -->
+            {{ item.clock_date }}
           </div>
         </li>
       </ul>
@@ -127,7 +95,7 @@
       </button>
     </div>
 
-    <shootDetails :show.sync="shootDetailsShow"/>
+    <shootDetails :show.sync="shootDetailsShow" :detailsId="detailsId" />
   </div>
 </template>
 
@@ -135,6 +103,7 @@
 import { deptApiList } from "@/server/api/dept"
 import shootDetails from "@/views/front/views/smileCheck/components/shootDetails.vue"
 import Shoot from "./components/shoot.vue"
+import { smileClockList } from "@/server/api/smileCheck"
 export default {
   components: {
     shootDetails,
@@ -143,7 +112,6 @@ export default {
   data() {
     return {
       reportList: { list: [], page: 1, total: 0, page_size: 6 },
-      reportType: "测评报告",
       depList: [],
       depId: "",
       searchName: "",
@@ -158,6 +126,7 @@ export default {
   created() {
     this.searchBtn()
     this.getdep()
+    this.getClockList()
   },
 
   methods: {
@@ -173,7 +142,7 @@ export default {
 
     searchBtn() {
       this.reportList.page = 1
-      //   this.getScaleReport()
+      this.getClockList()
     },
     reset() {
       this.searchName = ""
@@ -183,19 +152,12 @@ export default {
     },
 
     lookFn() {
-      this.shootDetailsShow = true
       if (this.detailsId == "")
         return this.$myMessage({
           type: "font-error",
           message: "请选择一条数据查看!",
         })
-      //   this.$router.push({
-      //     path: "/report/details",
-      //     query: {
-      //       id: this.detailsId,
-      //       type: this.reportType,
-      //     },
-      //   })
+      this.shootDetailsShow = true
     },
     async delFn() {
       this.$popup({
@@ -218,6 +180,28 @@ export default {
     },
     changePage(page) {
       this.reportList.page = page
+    },
+    async getClockList(page) {
+      if (page) {
+        this.reportList.page = page
+      }
+      this.listLoading = true
+      try {
+        const { data } = await smileClockList({
+          page: this.reportList.page,
+          page_size: this.reportList.page_size,
+          title: this.searchName,
+          class_id: this.depId,
+        })
+        if (data.code == this.$global.successCode) {
+          this.reportList.list = data.data.data
+          this.reportList.total = data.data.total
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.listLoading = false
+      }
     },
   },
   activated() {},
@@ -365,8 +349,12 @@ export default {
 
   .list_wrap {
     width: 1350px;
+    height: 470px;
     margin: 20px 0 0 30px;
     position: relative;
+    ::v-deep .el-loading-mask {
+      background-color: #00000060;
+    }
     .roof {
       width: 1350px;
       height: 42px;

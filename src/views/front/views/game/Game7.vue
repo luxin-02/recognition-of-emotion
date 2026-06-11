@@ -12,7 +12,8 @@
       </div>
       <div v-else class="step2">
         <div class="top">
-          <div>游戏进度：{{ level }}/∞</div>
+          <!-- <div>游戏进度：{{ level }}/∞</div> -->
+          <div>游戏进度：{{ 1 }}/∞</div>
           <div>当前步数：{{ steps }}</div>
           <div>用时：{{ time }} 秒</div>
         </div>
@@ -34,7 +35,7 @@
             <div>
               <p>游戏规则</p>
               <div>
-                每点击一个方块，该方块和上下左右4个格子的方块会出现反色（原来是红色变成黄色，原来是黄色变成红色），请把所有方块变成黄色。成功后将自动进入下一关，失败你将被留下。
+                每点击一个方块，该方块和上下左右4个格子的方块会出现反色（原来是红色变成黄色，原来是黄色变成红色），请把所有方块变成黄色。成功后将自动过关，失败你将被留下。
               </div>
             </div>
           </div>
@@ -63,7 +64,7 @@ export default {
 
       list: [],
       successList: [],
-      level: 1,
+      level: 5,
       steps: 0,
       currentSteps: 0,
       isLoading: true,

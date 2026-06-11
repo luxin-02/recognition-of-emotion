@@ -38,7 +38,7 @@ export function createCanvasLoading(canvas, options = {}) {
     // 合并默认选项
     const config = {
         color: options.color || '#3498db',
-        radius: options.radius || 20,
+        radius: options.radius || 25,
         lineWidth: options.lineWidth || 5,
         speed: options.speed || 1.5,
         ...options

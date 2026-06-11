@@ -55,7 +55,7 @@
         <div class="middle">
           <div>
             <div @click="$router.push('/smileCheck')"><i>微笑打卡</i></div>
-            <div><i>情绪检测</i></div>
+            <div @click="$router.push('/detection')"><i>情绪检测</i></div>
           </div>
           <div>
             <div class="model_tetx">

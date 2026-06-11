@@ -7,6 +7,8 @@ export default [
     path: "/login",
     name: "Login",
     component: () => import("@/views/front/login/frontLogin.vue"),
+
+    // component: () => import("@/views/front/views/detection/index.vue"),
     meta: {
       title: "home", //登录
       exitSystem: true,
@@ -290,6 +292,13 @@ export default [
           title: "报告详情",
         },
       },
+        {
+        path: "/report/emotionReport",
+        component: () => import("@/views/front/views/report/emotionReport.vue"),
+        meta: {
+          title: "情绪报告",
+        },
+      },
       {
         path: "/gameList",
         component: () => import("@/views/front/views/game/Index.vue"),
@@ -306,9 +315,17 @@ export default [
       },
       {
         path: "/smileCheck/statistics",
-        component: () => import("@/views/front/views/smileCheck/statistics.vue"),
+        component: () =>
+          import("@/views/front/views/smileCheck/statistics.vue"),
         meta: {
           title: "微笑打卡统计",
+        },
+      },
+      {
+        path: "/detection",
+        component: () => import("@/views/front/views/detection/index.vue"),
+        meta: {
+          title: "情绪检测",
         },
       },
     ],

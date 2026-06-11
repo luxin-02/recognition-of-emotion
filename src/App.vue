@@ -134,7 +134,7 @@ body {
   -webkit-app-region: no-drag;
   width: 1920px;
   height: 1080px;
-  overflow: hidden;
+  // overflow: hidden;
 }
 
 .top-drag_box {
