@@ -6,16 +6,17 @@
       <div class="mk_title"><i></i>基本信息</div>
       <div class="user_info">
         <div>
-          <div>
-            所属名称： <i>{{ reportData.gauge_title }}</i>
-          </div>
-          <div>
+          <div>所属名称： <i>情绪检测报告</i></div>
+          <!-- <div>
             本次报告用时：
             <i>{{ $formatTime(reportData.total_seconds, "HHH:mmm:sss") }}</i>
-          </div>
+          </div> -->
           <div>
             结果生成时间：
             <i>{{ $formatDate2(reportData.add_time * 1000, "yyyy-MM-dd") }}</i>
+          </div>
+          <div>
+            账号类型： <i>{{ $store.getters.roleInfo.name }}</i>
           </div>
         </div>
         <div>
@@ -26,7 +27,7 @@
             性别： <i>{{ reportData.sex }}</i>
           </div>
           <div>
-            年龄： <i>{{ reportData.age }}</i>
+            年龄： <i>{{ reportData.birthdate }}</i>
           </div>
         </div>
         <div>
@@ -44,9 +45,7 @@
           <div>
             注册账号： <i>{{ reportData.username }}</i>
           </div>
-          <div>
-            账号类型： <i>{{ $store.getters.roleInfo.name }}</i>
-          </div>
+
           <div>
             联系电话： <i>{{ reportData.phone }}</i>
           </div>
@@ -55,45 +54,51 @@
       <br />
 
       <div class="mk_title"><i></i>报告结果</div>
-      <div class="report_score">
+      <div class="report_score" v-if="reportData.image_analysis">
         <div class="instrument">
-          <div class="fenshu">85<i>分</i></div>
-          <div class="zhpf">综合评分</div>
+          <div class="fenshu">{{ reportData.image_analysis.value[0] }}<i>分</i></div>
+          <div class="zhpf">{{ reportData.image_analysis.name[0] }}</div>
           <canvas ref="progressCanvas" class="progress"></canvas>
         </div>
         <div class="score_box1">
           <div>
-            <div class="text1">负面情绪得分：</div>
-            <div class="text2">85<i>分</i></div>
-            <div class="text3">优秀</div>
+            <div class="text1">{{ reportData.image_analysis.name[2] }}得分：</div>
+            <div class="text2">{{ reportData.image_analysis.value[2] }}<i>分</i></div>
+            <div class="text3">{{ reportData.image_analysis.level[2] }}</div>
           </div>
           <div>
-            <div class="text1">负面情绪得分：</div>
-            <div class="text2">85<i>分</i></div>
-            <div class="text3">优秀</div>
+            <div class="text1">{{ reportData.image_analysis.name[1] }}得分：</div>
+            <div class="text2">{{ reportData.image_analysis.value[1] }}<i>分</i></div>
+            <div class="text3">{{ reportData.image_analysis.level[1] }}</div>
           </div>
         </div>
         <div class="score_box2">
-          <div class="text1">负面情绪得分：</div>
-          <div class="text2">85<i>分</i></div>
-          <div class="text3">优秀</div>
+          <div class="text1">{{ reportData.image_analysis.name[3] }}得分：</div>
+          <div class="text2">{{ reportData.image_analysis.value[3] }}<i>分</i></div>
+          <div class="text3">{{ reportData.image_analysis.level[3] }}</div>
         </div>
       </div>
 
       <br />
 
       <!-- ----------- -->
-      <template>
+      <template v-if="reportData.negative">
         <br />
         <div class="mk_title"><i></i>负面情绪分析</div>
-        <div id="radarMap" :style="{ transform: `scale(${scale})` }"></div>
-        <div>
+        <div
+          id="radarMap"
+          :style="{
+            transform: `scale(${scale})`,
+            marginBottom: `${-510 * (1 - scale)}px`,
+          }"
+        ></div>
+        <div v-for="(item, index) in this.reportData.negative.name" :key="index">
           <div class="mk2_title">
             <img src="@/assets/img/front/report/yuan.png" />
-            {{ "item.gradeName" }}
+            {{ item }}指数
           </div>
           <el-progress
-            :percentage="50"
+            :percentage="+reportData.negative.value[index]"
             :color="customColors"
             :stroke-width="10"
             define-back-color="#091628"
@@ -102,13 +107,13 @@
           <br />
           <div class="score_analyse">
             <div class="analyse_header">
-              <div>睡眠指数：</div>
-              <div>66</div>
-              <div>睡眠充足</div>
+              <div>{{ item }}指数：</div>
+              <div>{{ reportData.negative.value[index] }}</div>
+              <div>{{ reportData.negative.level[index] }}</div>
             </div>
             <div class="analyse_title"><i></i>分析总结</div>
             <div class="analyse_content">
-              抑郁指数分析：​​核心差异​​：抑郁障碍（单相）仅有抑郁发作；双相障碍则交替出现抑郁和躁狂/轻躁狂发作。关键鉴别点​​：情绪波动​​：双相患者抑可能伴易激惹、冲动行为，躁狂期表现为情绪高涨、精力过盛、睡眠需求减少起病年龄​​：双相障碍多在25岁前急性起病，抑郁障碍常于中年缓慢起病。家族史​​：双相障碍遗传倾向更显著（一级亲属患病风险高10倍）。治疗反应​​：抗抑郁药可能诱发双相患者转躁，需谨慎使用心境稳定剂。
+              {{ reportData.negative.result[index] }}
             </div>
           </div>
         </div>
@@ -119,9 +124,16 @@
 
       <!-- ----------- -->
       <template>
-        <div class="mk_title"><i></i>负面情绪分析</div>
-        <div id="roseChart" :style="{ transform: `scale(${scale})` }"></div>
-        <div>
+        <div class="mk_title"><i></i>正面情绪分析</div>
+        <!-- <div id="roseChart" :style="{ transform: `scale(${scale})` }"></div> -->
+        <div
+          id="roseChart"
+          :style="{
+            transform: `scale(${scale})`,
+            marginBottom: `${-510 * (1 - scale)}px`,
+          }"
+        ></div>
+        <div v-if="false">
           <div class="mk2_title">
             <img src="@/assets/img/front/report/yuan.png" />
             {{ "item.gradeName" }}
@@ -151,9 +163,16 @@
 
       <!-- ----------- -->
       <template>
-        <div class="mk_title"><i></i>负面情绪分析</div>
-        <div id="barGraph" :style="{ transform: `scale(${scale})` }"></div>
-        <div>
+        <div class="mk_title"><i></i>心理情绪分析</div>
+        <!-- <div id="barGraph" :style="{ transform: `scale(${scale})` }"></div> -->
+        <div
+          id="barGraph"
+          :style="{
+            transform: `scale(${scale})`,
+            marginBottom: `${-510 * (1 - scale)}px`,
+          }"
+        ></div>
+        <div v-if="false">
           <div class="mk2_title">
             <img src="@/assets/img/front/report/yuan.png" />
             {{ "item.gradeName" }}
@@ -181,19 +200,25 @@
       </template>
       <!-- ----------- -->
 
-      <div class="mk2_title">
+      <div class="mk_title"><i></i>情绪总体分析：</div>
+      <template v-if="reportData.image_analysis">
+        <div class="summarize" v-for="(item, i) in reportData.image_analysis.name" :key="item.name">
+          <div class="analyse_title"><i></i>{{ item }}分析：</div>
+          <div class="analyse_content">
+            {{ reportData.image_analysis.result[i] }}
+          </div>
+        </div>
+      </template>
+
+      <!-- <div class="mk2_title">
         <img src="@/assets/img/front/report/yuan.png" />
         推荐方案
       </div>
       <div class="project">
-        <!-- <div
-            v-for="(item, i) in reportData.recommend"
-            :key="i"
-            @click="toRecommend(item)"
-          >
-            {{ item.title }}
-          </div> -->
-      </div>
+        <div v-for="(item, i) in reportData.recommend" :key="i" @click="toRecommend(item)">
+          {{ item.title }}
+        </div>
+      </div> -->
 
       <br /><br />
     </div>
@@ -201,10 +226,9 @@
 </template>
 
 <script>
-import { frontGaugeReportApiInfo } from "@/server/api/guage"
-import { reportApiInfo } from "@/server/api/report"
 import * as echarts from "echarts"
 import scaleMixin from "@/mixins/scaleMixin"
+import { getSmileAssessDetail } from "@/server/api/detection"
 export default {
   mixins: [scaleMixin],
   data() {
@@ -229,37 +253,39 @@ export default {
   },
   created() {},
   mounted() {
-    this.roseMapChart = echarts.init(document.getElementById("roseChart"))
-    this.radarMapChart = echarts.init(document.getElementById("radarMap"))
-    this.barGraphChart = echarts.init(document.getElementById("barGraph"))
-    this.getGaugeInfo()
-    this.$nextTick(() => {
-      this.drawSemiCircleProgress()
-      this.roseChartFn()
-      this.barGraphChartFn()
-    })
+    this.getSmileDetail()
   },
   methods: {
-    async getGaugeInfo() {
+    async getSmileDetail() {
       this.detailsLoading = true
       try {
-        const { data } = await frontGaugeReportApiInfo({
+        const { data } = await getSmileAssessDetail({
           id: this.$route.query.id,
         })
         if (data.code == this.$global.successCode) {
           this.reportData = data.data
-          let indicator = []
-          let series = []
-          data.data.record_result.forEach((item) => {
-            indicator.push({ name: item.gradeName, max: 100 })
-            series.push(item.prop)
-          })
+          this.reportData.image_analysis = this.safeJsonParse(this.reportData.image_analysis)
+          this.reportData.mental_ability = this.safeJsonParse(this.reportData.mental_ability)
+          this.reportData.negative = this.safeJsonParse(this.reportData.negative)
+          this.reportData.positive = this.safeJsonParse(this.reportData.positive)
+          this.reportData.comprehensive = this.safeJsonParse(this.reportData.comprehensive)
+          console.log(this.reportData)
+          this.progressValue = this.reportData.image_analysis.value[0] || 0
+          // reportData.image_analysis = JSON.parse(reportData.image_analysis)
+          // image_analysis 总分
+          // comprehensive 综合分析
+          // negative 负面情绪
+          // positive 正面情绪
+          // mental_ability 心理能力
 
-          this.$nextTick(async () => {
-            console.log(this.reportData)
-            if (data.data.record_result.length > 1) {
-              this.radarMapChartFn(indicator, series)
-            }
+          this.$nextTick(() => {
+            this.roseMapChart = echarts.init(document.getElementById("roseChart"))
+            this.radarMapChart = echarts.init(document.getElementById("radarMap"))
+            this.barGraphChart = echarts.init(document.getElementById("barGraph"))
+            this.radarMapChartFn(this.reportData.negative.name, this.reportData.negative.value)
+            this.roseChartFn(this.reportData.positive.value)
+            this.barGraphChartFn(this.reportData.mental_ability.name, this.reportData.mental_ability.value)
+            this.drawSemiCircleProgress()
           })
         }
       } catch (error) {
@@ -268,7 +294,11 @@ export default {
         this.detailsLoading = false
       }
     },
-    radarMapChartFn(indicator, series) {
+    radarMapChartFn(data, series) {
+      let indicator = []
+      data.forEach((item) => {
+        indicator.push({ name: item, max: 100 })
+      })
       let option = {
         // 设置背景颜色与页面容器一致
         backgroundColor: "#082047",
@@ -328,7 +358,7 @@ export default {
       }
       option && this.radarMapChart.setOption(option)
     },
-    roseChartFn() {
+    roseChartFn(data) {
       let option = {
         animation: false,
         series: [
@@ -350,19 +380,13 @@ export default {
               color: "#fff", // 文字颜色
               formatter: "{b}：{c}分", // 格式化显示内容
             },
-            data: [
-              { value: 40, name: "rose1" },
-              { value: 38, name: "rose2" },
-              { value: 32, name: "rose3" },
-              { value: 30, name: "rose4" },
-              { value: 28, name: "rose5" },
-            ],
+            data: data,
           },
         ],
       }
       option && this.roseMapChart.setOption(option)
     },
-    barGraphChartFn() {
+    barGraphChartFn(data, series) {
       let option = {
         animation: false,
         grid: {
@@ -373,7 +397,7 @@ export default {
         },
         xAxis: {
           type: "category",
-          data: ["rose1", "rose2", "rose3", "rose4", "rose5", "rose6", "rose7"],
+          data: data,
           axisLine: {
             lineStyle: {
               color: "#3d5a98",
@@ -384,7 +408,7 @@ export default {
           },
           axisLabel: {
             color: "#00cfff",
-            fontSize: 18,
+            fontSize: 16,
           },
         },
         yAxis: {
@@ -410,7 +434,7 @@ export default {
           // 背景柱
           {
             type: "bar",
-            data: new Array(7).fill(100),
+            data: series,
             barWidth: 42,
             barGap: "-100%",
             itemStyle: {
@@ -432,15 +456,7 @@ export default {
             z: 2,
             itemStyle: {
               color: (params) => {
-                const colors = [
-                  "#18c8ff",
-                  "#ffee00",
-                  "#18d27c",
-                  "#18c8ff",
-                  "#ffee00",
-                  "#18c8ff",
-                  "#5d5dff",
-                ]
+                const colors = ["#18c8ff", "#ffee00", "#18d27c", "#18c8ff", "#ffee00", "#18c8ff", "#5d5dff"]
 
                 return colors[params.dataIndex]
               },
@@ -455,36 +471,36 @@ export default {
       if (!canvas) return
 
       const ctx = canvas.getContext("2d")
-      const width = 300
-      const height = 300
+      // const width = 300
+      // const height = 300
       const dpr = window.devicePixelRatio || 1
+
+      const width = canvas.clientWidth
+      const height = canvas.clientHeight
 
       canvas.width = width * dpr
       canvas.height = height * dpr
-      canvas.style.width = width + "px"
-      canvas.style.height = height + "px"
+      // canvas.style.width = width + "px"
+      // canvas.style.height = height + "px"
       ctx.scale(dpr, dpr)
 
       const centerX = width / 2
       const centerY = height / 2
-      const radius = 130
+      // const radius = 130
+      const radius = width * (130 / 300) // 比例计算，适配任意尺寸
+      const lineWidth = width * (12 / 300)
       const startAngle = Math.PI
       const endAngle = Math.PI * 2
 
       // 绘制背景半圆
       ctx.beginPath()
       ctx.arc(centerX, centerY, radius, startAngle, endAngle, false)
-      ctx.lineWidth = 12
+      ctx.lineWidth = lineWidth
       ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"
       ctx.stroke()
 
       // 绘制进度半圆（使用渐变色）
-      const gradient = ctx.createLinearGradient(
-        centerX - radius,
-        centerY,
-        centerX + radius,
-        centerY,
-      )
+      const gradient = ctx.createLinearGradient(centerX - radius, centerY, centerX + radius, centerY)
       gradient.addColorStop(0, "#FF5F35")
       gradient.addColorStop(0.25, "#FF9328")
       gradient.addColorStop(0.5, "#FFCC31")
@@ -493,18 +509,21 @@ export default {
 
       const progress = Math.min(this.progressValue / 100, 1)
       ctx.beginPath()
-      ctx.arc(
-        centerX,
-        centerY,
-        radius,
-        startAngle,
-        startAngle + (endAngle - startAngle) * progress,
-        false,
-      )
-      ctx.lineWidth = 12
+      ctx.arc(centerX, centerY, radius, startAngle, startAngle + (endAngle - startAngle) * progress, false)
+      ctx.lineWidth = lineWidth
       ctx.strokeStyle = gradient
       ctx.lineCap = "round"
       ctx.stroke()
+    },
+    safeJsonParse(data) {
+      if (typeof data === "string") {
+        try {
+          return JSON.parse(data)
+        } catch {
+          return data
+        }
+      }
+      return data || {}
     },
   },
   beforeDestroy() {},
@@ -612,8 +631,8 @@ export default {
     #roseChart,
     #barGraph,
     #radarMap {
-      width: 1000px;
-      height: 510px;
+      width: 1100PX;
+      height: 510PX;
       margin: 0 auto;
       transform-origin: 0 0;
     }
@@ -798,6 +817,33 @@ export default {
           }
         }
       }
+      .analyse_title {
+        font-size: 20px;
+        color: #00aeff;
+        display: flex;
+        align-items: center;
+        margin: 15px;
+        > i {
+          width: 10px;
+          height: 10px;
+          background: #00acff;
+          display: inline-block;
+          border-radius: 50%;
+          margin-right: 8px;
+        }
+      }
+      .analyse_content {
+        font-size: 18px;
+        color: #ffffff;
+        line-height: 26px;
+        margin: 0 15px 10px 15px;
+      }
+    }
+
+    .summarize {
+      width: 100%;
+      padding: 0 0 0 10px;
+      box-sizing: border-box;
       .analyse_title {
         font-size: 20px;
         color: #00aeff;

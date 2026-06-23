@@ -33,7 +33,8 @@
 
         <Middle
           @emotion-change="handleEmotionChange"
-          @analysis-complete="handleAnalysisComplete"
+          @report-add="handleReportAdd"
+          @lookReport="handleLookReport"
         />
       </div>
       <div class="right">
@@ -87,6 +88,7 @@ import LeftBottom from "./components/left_bottom.vue"
 import RightTop from "./components/right_top.vue"
 import RightBottom from "./components/right_bottom.vue"
 import Middle from "./components/middle.vue"
+import { addSmileAssess } from "@/server/api/detection"
 export default {
   components: { LeftTop, LeftBottom, RightTop, RightBottom, Middle },
   data() {
@@ -104,6 +106,8 @@ export default {
       positiveData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       negativeData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       analysisData: "",
+
+      detailsId: "",
     }
   },
   created() {},
@@ -124,8 +128,70 @@ export default {
       this.positiveData = ZMrightBottom
       this.negativeData = FMrightBottom
     },
-    handleAnalysisComplete(analysisData) {
+    async handleReportAdd(analysisData) {
       this.analysisData = analysisData
+      const { data } = await addSmileAssess({
+        image_analysis: this.analysisData, // 总分
+        image_analysis: {
+          name: ["微笑指数", "正面情绪", "负面情绪", "心理能力"],
+          value: [
+            this.analysisData.smileIndex,
+            this.analysisData.positiveEmotion,
+            this.analysisData.negativeEmotion,
+            this.analysisData.mentalAbility,
+          ],
+        }, // 总分
+        comprehensive: [
+          { name: "心理能力", value: this.psychologyData },
+          { name: "正面情绪", value: this.positiveData },
+          { name: "负面情绪", value: this.negativeData },
+        ], // 综合分析
+        negative: {
+          name: ["焦虑", "抑郁", "压力", "失眠", "疲劳", "易怒", "放松"],
+          value: this.LeftTopValueData,
+        }, // 负面情绪
+        positive: {
+          name: ["满足指数", "放松指数", "兴奋指数", "乐观指数", "自信指数"],
+          value: this.rightTopValueData,
+        }, // 正面情绪
+        mental_ability: {
+          name: [
+            "抗压指数",
+            "记忆力指数",
+            "适应力指数",
+            "专注力指数",
+            "自控力指数",
+            "心理负荷指数",
+            "情绪平衡指数",
+            "情绪稳定指数",
+          ],
+          value: this.leftBottomValueData,
+        }, // 心理能力
+      })
+      if (data.code == this.$global.successCode) {
+        this.$myMessage({
+          type: "font-success",
+          message: data.msg,
+        })
+        this.detailsId = data.data.id
+      }
+    },
+
+    handleLookReport(){
+      if(!this.detailsId){
+        this.$myMessage({
+          type: "font-error",
+          message: "请先检测",
+        })
+        return
+      }
+      this.$router.push({
+        path: "/report/emotionReport",
+        query: {
+          id: this.detailsId,
+          type: "检测报告",
+        },
+      })
     }
   },
   beforeDestroy() {},

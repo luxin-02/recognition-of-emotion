@@ -6,12 +6,7 @@
 
       <div class="search_wrap">
         输入姓名 :
-        <el-input
-          placeholder="搜索用户"
-          v-model="searchName"
-          prefix-icon="el-icon-search"
-        >
-        </el-input>
+        <el-input placeholder="搜索用户" v-model="searchName" prefix-icon="el-icon-search"> </el-input>
 
         选择部门 :
         <el-cascader
@@ -75,7 +70,7 @@
     </div>
     <div class="all_num">报告数量{{ reportList.total }}份</div>
     <div class="pagination">
-      <button class="sye" @click="changePage(1)">首页</button>
+      <button class="sye" @click="getClockList(1)">首页</button>
       <el-pagination
         background
         layout="prev, pager, next"
@@ -84,18 +79,13 @@
         :page-size="reportList.page_size"
         prev-text="<<上一页"
         next-text="下一页>>"
-        @current-change="changePage"
+        @current-change="getClockList"
       >
       </el-pagination>
-      <button
-        class="wye"
-        @click="changePage(Math.ceil(reportList.total / reportList.page_size))"
-      >
-        尾页
-      </button>
+      <button class="wye" @click="getClockList(Math.ceil(reportList.total / reportList.page_size))">尾页</button>
     </div>
 
-    <shootDetails :show.sync="shootDetailsShow" :detailsId="detailsId" />
+    <shootDetails ref="shootRef" :show.sync="shootDetailsShow" :detailsId="detailsId" />
   </div>
 </template>
 
@@ -103,7 +93,7 @@
 import { deptApiList } from "@/server/api/dept"
 import shootDetails from "@/views/front/views/smileCheck/components/shootDetails.vue"
 import Shoot from "./components/shoot.vue"
-import { smileClockList } from "@/server/api/smileCheck"
+import { deleteSmileClock, smileClockList } from "@/server/api/smileCheck"
 export default {
   components: {
     shootDetails,
@@ -126,7 +116,7 @@ export default {
   created() {
     this.searchBtn()
     this.getdep()
-    this.getClockList()
+    // this.getClockList()
   },
 
   methods: {
@@ -158,23 +148,26 @@ export default {
           message: "请选择一条数据查看!",
         })
       this.shootDetailsShow = true
+      this.$nextTick(() => {
+        this.$refs.shootRef.getDetails()
+      })
     },
     async delFn() {
+      if (!this.detailsId) {
+        return this.$myMessage({
+          type: "font-error",
+          message: "请选择一条报告!",
+        })
+      }
       this.$popup({
         title: "提示",
         content: "是否确认删除？",
         saveFoo: async () => {
-          if (!this.detailsId) {
-            this.$myMessage({
-              type: "font-error",
-              message: "请选择一条报告!",
-            })
-            return
-            //    this.$myMessage({
-            //     type: "font-success",
-            //     message: "删除成功!",
-            //   })
-          }
+          await deleteSmileClock({ ids: this.detailsId })
+          this.$myMessage({ type: "font-success", message: "删除成功!" })
+          this.detailsId = ""
+          const needPrevPage = this.reportList.total !== 1 && this.reportList.list.length === 1
+          this.getClockList(needPrevPage ? this.reportList.page - 1 : undefined)
         },
       })
     },

@@ -232,7 +232,7 @@ export default {
     display: flex;
     justify-content: space-between;
     position: absolute;
-    top: 400px;
+    top: 420px;
     padding: 0 80px;
     box-sizing: border-box;
     > .pre,

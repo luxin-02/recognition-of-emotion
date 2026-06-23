@@ -124,7 +124,7 @@
           <div class="explain_text" v-html="reportData.suggest"></div>
         </template>
 
-        <div class="mk2_title">
+        <!-- <div class="mk2_title">
           <img src="@/assets/img/front/report/yuan.png" />
           推荐方案
         </div>
@@ -132,7 +132,7 @@
           <div v-for="(item, i) in reportData.recommend" :key="i">
             {{ item }}
           </div>
-        </div>
+        </div> -->
 
         <br /><br />
       </div>

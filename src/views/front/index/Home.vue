@@ -8,11 +8,7 @@
             欢迎您,<i>{{ $store.getters.isAdmin ? "管理员" : "" }}</i
             >{{ $store.getters.userInfo.nickname }}
           </div>
-          <img
-            class="logout"
-            @click="logout"
-            src="@/assets/img/front/home/logout.png"
-          />
+          <img class="logout" @click="logout" src="@/assets/img/front/home/logout.png" />
         </div>
 
         <div class="top_right">
@@ -28,11 +24,7 @@
             <div>姓名：{{ $store.getters.userInfo.nickname }}</div>
             <div>账号：{{ $store.getters.userInfo.username }}</div>
             <div v-if="$store.getters.userInfo.depts.length">
-              部门：{{
-                $store.getters.userInfo.depts.length
-                  ? $store.getters.userInfo.depts[0].class_name
-                  : "无"
-              }}
+              部门：{{ $store.getters.userInfo.depts.length ? $store.getters.userInfo.depts[0].class_name : "无" }}
             </div>
             <i>个人资料</i>
           </div>
@@ -41,15 +33,12 @@
             <div class="synthetical_title"><i></i>综合数据：</div>
 
             <div class="number_box">
-              <div>训练数：15次</div>
-              <div>评估数：12次</div>
+              <div>训练数：{{ tonjiData.xl_num }}次</div>
+              <div>评估数：{{ tonjiData.pg_num }}次</div>
             </div>
             <br />
             <div class="synthetical_title"><i></i>训练数据详情：</div>
-            <div
-              id="data_chart"
-              :style="{ transform: `scale(${scale})` }"
-            ></div>
+            <div id="data_chart" :style="{ transform: `scale(${scale})` }"></div>
           </div>
         </div>
         <div class="middle">
@@ -89,6 +78,7 @@ import { userBackApiLogout } from "@/server/api/user.js"
 import { getTodayMoodRecord } from "@/server/api/mood"
 import * as echarts from "echarts"
 import scaleMixin from "@/mixins/scaleMixin"
+import { statisticsTrainApiData } from "@/server/api/statistic"
 export default {
   mixins: [scaleMixin],
   data() {
@@ -121,9 +111,10 @@ export default {
           i: 5,
         },
       ],
-      chartTitle: ["训练1", "训练2", "训练3", "训练4", "训练5", "训练6"],
-      chartScores: [12, 45, 65, 75, 3, 44],
+
       dataChartRef: null,
+
+      tonjiData: "",
     }
   },
   computed: {
@@ -141,7 +132,7 @@ export default {
     // this.getSystemInfo();
     // await this.getTodayMoodRecordFn()
     this.dataChartRef = echarts.init(document.getElementById("data_chart"))
-    await this.dataChart(this.chartTitle, this.chartScores)
+    await this.getTrainData()
   },
   methods: {
     // 获取初始设置
@@ -176,7 +167,14 @@ export default {
       }
     },
 
-    async dataChart(title, scores) {
+    async dataChart({ xl }) {
+      let title = []
+      let scores = []
+
+      xl.forEach((item) => {
+        title.push(item.game_name)
+        scores.push(item.count)
+      })
       var myChart = this.dataChartRef
       window.addEventListener("resize", function () {
         myChart.resize({})
@@ -187,7 +185,7 @@ export default {
         grid: {
           // 让图表占满容器
           top: "20px",
-          left: "40px",
+          left: "20px",
           right: "20px",
           bottom: "30px",
         },
@@ -197,9 +195,10 @@ export default {
           },
           axisLabel: {
             textStyle: {
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: 400,
             },
+            rotate: 15,
             interval: 0,
           },
           type: "category",
@@ -219,6 +218,7 @@ export default {
               fontSize: 14,
             },
           },
+          minInterval: 1,
         },
         series: [
           {
@@ -271,6 +271,17 @@ export default {
       }
       myChart.setOption(option)
       // let chartImg = myChart.getDataURL(option)
+    },
+
+    async getTrainData() {
+      const { data } = await statisticsTrainApiData()
+      if (data.code == this.$global.successCode) {
+        console.log(data.data)
+        this.tonjiData = data.data
+        this.$nextTick(() => {
+          this.dataChart(data.data)
+        })
+      }
     },
   },
   beforeDestroy() {},
@@ -439,7 +450,9 @@ export default {
             }
           }
           #data_chart {
-            width: 430PX;
+            /* prettier-ignore */
+            width: 450PX;
+            /* prettier-ignore */
             height: 140PX;
             transform-origin: 0 0;
           }

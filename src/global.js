@@ -8,6 +8,7 @@ let successCode = 200; //接口响应成功返回的code
 
 if (process.env.NODE_ENV === "development") {
   // ip = "http://192.168.1.23:8057/";
+  // ip = "http://192.168.1.100:8057/";
 }
 export default {
   ip,

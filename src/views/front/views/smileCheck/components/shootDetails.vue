@@ -6,55 +6,46 @@
 
         <div class="content_wrap">
           <div class="ph_box">
-            <img src="" />
+            <img v-if="mainImage" :src="mainImage" />
           </div>
           <div class="details_box">
             <div class="user_info">
-              <div>姓名：张写</div>
-              <div>点赞量：100</div>
-              <div>性别：男</div>
-              <div>照片编号：111125</div>
-              <div>部门：技术部</div>
-              <div>打卡日期：2023-08-01</div>
+              <div>姓名：{{ showText(detailData && detailData.nickname) }}</div>
+              <div>点赞量：{{ showText(detailData && detailData.like_num) }}</div>
+              <div>性别：{{ showText(detailData && detailData.sex) }}</div>
+              <div>照片编号：{{ showText(detailData && detailData.id) }}</div>
+              <div>部门：{{ showText(detailData && detailData.class_name) }}</div>
+              <div>打卡日期：{{ showText(detailData && detailData.clock_date) }}</div>
             </div>
             <div class="shoot_info">
               <div>
                 <p>微笑指数</p>
-                <i>100分</i>
+                <i>{{ showScore(detailData && detailData.smile_index) }}</i>
               </div>
               <div>
                 <p>正面情绪</p>
-                <i>100分</i>
+                <i>{{ showScore(detailData && detailData.positive_emotion) }}</i>
               </div>
               <div>
                 <p>负面情绪</p>
-                <i>100分</i>
+                <i>{{ showScore(detailData && detailData.negative_emotion) }}</i>
               </div>
               <div>
                 <p>心理能力</p>
-                <i>100分</i>
+                <i>{{ showScore(detailData && detailData.mental_ability) }}</i>
               </div>
             </div>
             <div class="resemblance">
               <div class="resemblance_title"><i></i>相似笑容：</div>
               <div class="resemblance_ph">
-                <div>
-                  <img src="" />
-                </div>
-                <div>
-                  <img src="" />
-                </div>
-                <div>
-                  <img src="" />
-                </div>
-                <div>
-                  <img src="" />
+                <div v-for="(item, index) in resemblanceImages" :key="index">
+                  <img v-if="item" :src="item" />
                 </div>
               </div>
             </div>
 
-            <div class="upvote">
-              <img src="@/assets/img/front/smileCheck/已赞.png" />
+            <div class="upvote" @click="handleLike">
+              <img v-if="isLiked" src="@/assets/img/front/smileCheck/已赞.png" />
             </div>
           </div>
         </div>
@@ -66,12 +57,13 @@
 </template>
 
 <script>
-import { smileClockDetail } from "@/server/api/smileCheck"
+import { smileClockDetail, likeSmileClock } from "@/server/api/smileCheck"
 export default {
   data() {
     return {
       isShow: false,
       detailData: null,
+      likeLoading: false,
     }
   },
   props: {
@@ -80,7 +72,6 @@ export default {
       default: false,
     },
     detailsId: {
-      type: String,
       default: "",
     },
   },
@@ -89,6 +80,23 @@ export default {
     this.$nextTick(() => {
       this.isShow = this.show
     })
+  },
+  computed: {
+    mainImage() {
+      const detailData = this.detailData || {}
+      return this.getImageUrl(detailData.image || detailData.avatar)
+    },
+    resemblanceImages() {
+      const detailData = this.detailData || {}
+      const list = detailData.similar_list || []
+      return list.slice(0, 4).map((item) => this.getImageUrl(item.image || item))
+    },
+    isLiked() {
+      const detailData = this.detailData || {}
+      return (
+        detailData.is_like == 1 || detailData.is_like === true || detailData.isLike == 1 || detailData.isLike === true
+      )
+    },
   },
   methods: {
     cancel() {
@@ -104,17 +112,59 @@ export default {
         })
         if (data.code == this.$global.successCode) {
           this.detailData = data.data
-          console.log(this.detailData)
         }
       }
+    },
+    async handleLike() {
+      if (!this.detailData || this.likeLoading) {
+        return
+      }
+      this.likeLoading = true
+      const liked = this.isLiked
+      const likeNum = Number(this.detailData.like_num) || 0
+      try {
+        const { data } = await likeSmileClock({
+          id: this.detailData.id || this.detailsId,
+        })
+        if (data.code == this.$global.successCode) {
+          const nextData = data.data && typeof data.data === "object" ? data.data : null
+          if (nextData) {
+            this.detailData = {
+              ...this.detailData,
+              ...nextData,
+            }
+          }
+          if (!nextData || (!("is_like" in nextData) && !("isLike" in nextData))) {
+            this.$set(this.detailData, "is_like", liked ? 0 : 1)
+          }
+          if (!nextData || !("like_num" in nextData)) {
+            this.$set(this.detailData, "like_num", liked ? Math.max(likeNum - 1, 0) : likeNum + 1)
+          }
+        }
+      } finally {
+        this.likeLoading = false
+      }
+    },
+    getImageUrl(url) {
+      if (!url) {
+        return ""
+      }
+      if (/^(https?:)?\/\//.test(url) || /^data:/.test(url)) {
+        return url
+      }
+      return this.$ip + url
+    },
+    showText(value) {
+      return value || value === 0 ? value : "--"
+    },
+    showScore(value) {
+      return `${this.showText(value)}分`
     },
   },
   watch: {
     show(newV) {
       this.isShow = newV
-      if (newV) {
-        this.getDetails()
-      } else {
+      if (!newV) {
         this.detailData = null
       }
     },
@@ -200,7 +250,6 @@ export default {
             font-size: 16px;
             color: #fefefe;
             font-family: "ziyuanyuanti500W";
-            // line-height: 50px;
             padding-left: 20px;
             box-sizing: border-box;
           }
@@ -294,6 +343,7 @@ export default {
           position: absolute;
           right: 10px;
           top: 10px;
+          cursor: pointer;
           > img {
             width: 100%;
             height: 100%;

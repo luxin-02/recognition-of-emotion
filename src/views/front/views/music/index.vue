@@ -2,11 +2,7 @@
   <div class="index">
     <div class="music_wrap">
       <div class="module_title">音乐详情</div>
-      <button
-        v-show="$store.getters.musicObj.closeBtn"
-        class="close"
-        @click="$store.getters.musicObj.show = false"
-      >
+      <button v-show="$store.getters.musicObj.closeBtn" class="close" @click="$store.getters.musicObj.show = false">
         X
       </button>
 
@@ -47,27 +43,13 @@
       </div> -->
 
         <div class="search_wrap">
-          <el-input
-            placeholder="搜索歌曲"
-            v-model="searchText"
-            prefix-icon="el-icon-search"
-          >
-            <el-button slot="append" @click="classBtn(classActive, 1)"
-              >搜索</el-button
-            >
+          <el-input placeholder="搜索歌曲" v-model="searchText" prefix-icon="el-icon-search">
+            <el-button slot="append" @click="classBtn(classActive, 1)">搜索</el-button>
           </el-input>
-          <button
-            class="sx"
-            @click="playMode = 'order'"
-            :class="[playMode == 'order' ? 'active' : '']"
-          >
+          <button class="sx" @click="playMode = 'order'" :class="[playMode == 'order' ? 'active' : '']">
             <img src="@/assets/img/front/music/顺序.png" />顺序播放
           </button>
-          <button
-            class="sj"
-            @click="playMode = 'random'"
-            :class="[playMode == 'random' ? 'active' : '']"
-          >
+          <button class="sj" @click="playMode = 'random'" :class="[playMode == 'random' ? 'active' : '']">
             <img src="@/assets/img/front/music/随机.png" />随机播放
           </button>
         </div>
@@ -92,22 +74,14 @@
               <div class="duration">
                 {{ $formatTime(item.duration, "HH:mmm:sss") }}
               </div>
-              <div
-                class="cz"
-                v-if="playPause && item.id == currentMusic.id"
-                style="color: #00a6fc"
-              >
-                正在播放
-              </div>
+              <div class="cz" v-if="playPause && item.id == currentMusic.id" style="color: #00a6fc">正在播放</div>
               <div class="cz" v-else>开始播放</div>
             </li>
           </ul>
 
           <div class="total">
             {{ musicList.page }}
-            <span style="color: #fff"
-              >/{{ Math.ceil(this.musicList.total / 5) }}</span
-            >
+            <span style="color: #fff">/{{ Math.ceil(this.musicList.total / 5) }}</span>
           </div>
           <div class="page_turning">
             <button @click="pageChange('pre')">上一页</button>
@@ -118,10 +92,8 @@
 
       <div class="playing_status">
         <div class="vinyl_record_box">
-          <img
-            class="vinyl_record_img"
-            src="@/assets/img/front/music/唱片.png"
-          />
+          <img v-if="!currentMusic.img_url" class="vinyl_record_img" src="@/assets/img/front/music/唱片.png" />
+          <img v-else class="vinyl_record_img" :src="$ip + currentMusic.img_url" />
         </div>
         <div class="introductory">
           <div class="music_name">
@@ -135,9 +107,7 @@
         <div class="schedule_box" v-if="currentMusic.id">
           <span>
             {{ $formatTime(MusicProgress, "HH:mmm:sss") }}
-            <i style="color: #fff"
-              >/{{ $formatTime(currentMusic.duration, "HH:mmm:sss") }}
-            </i>
+            <i style="color: #fff">/{{ $formatTime(currentMusic.duration, "HH:mmm:sss") }} </i>
           </span>
 
           <div class="slider">
@@ -164,10 +134,7 @@
           <div @click="nextSong">下一首</div>
           <i class="line"></i>
           <div @click="enterFullScreen">
-            <img
-              style="width: 0.18rem; height: 0.18rem"
-              src="@/assets/img/front/music/全屏.png"
-            />全屏
+            <img style="width: 0.18rem; height: 0.18rem" src="@/assets/img/front/music/全屏.png" />全屏
           </div>
         </div>
 
@@ -191,7 +158,8 @@
     <AnimationPopup :show.sync="fullShow">
       <div class="full_music">
         <div class="full_disc">
-          <img src="@/assets/img/front/music/唱片.png" />
+          <img v-if="!currentMusic.img_url" src="@/assets/img/front/music/唱片.png" />
+          <img v-else :src="$ip + currentMusic.img_url" />
         </div>
 
         <div class="full_slider">
@@ -211,29 +179,13 @@
             >/{{ $formatTime(currentMusic.duration, "HH:mmm:sss") }}
           </div>
           <div class="full_play_pause">
-            <img
-              @click="Previous"
-              src="@/assets/img/front/music/full_上一首.png"
-            />
-            <img
-              v-show="!playPause"
-              @click="playMusic"
-              src="@/assets/img/front/music/full_暂停.png"
-            />
-            <img
-              v-show="playPause"
-              @click="playMusic"
-              src="@/assets/img/front/music/full_播放.png"
-            />
-            <img
-              @click="nextSong"
-              src="@/assets/img/front/music/full_下一首.png"
-            />
+            <img @click="Previous" src="@/assets/img/front/music/full_上一首.png" />
+            <img v-show="!playPause" @click="playMusic" src="@/assets/img/front/music/full_暂停.png" />
+            <img v-show="playPause" @click="playMusic" src="@/assets/img/front/music/full_播放.png" />
+            <img @click="nextSong" src="@/assets/img/front/music/full_下一首.png" />
           </div>
           <div class="sound_close">
-            <div class="full_sound" @click="fullVolumeShow = !fullVolumeShow">
-              声音
-            </div>
+            <div class="full_sound" @click="fullVolumeShow = !fullVolumeShow">声音</div>
             <div class="full_close" @click="fullShow = false">退出全屏</div>
           </div>
         </div>
@@ -277,11 +229,7 @@
 </template>
 
 <script>
-import {
-  frontMusicClassApiList,
-  frontMusicApiList,
-  frontMusicRandMusic,
-} from "@/server/api/music"
+import { frontMusicClassApiList, frontMusicApiList, frontMusicRandMusic } from "@/server/api/music"
 export default {
   props: ["volueNum"],
   data() {
@@ -445,9 +393,7 @@ export default {
         this.musicList.page = data.data.page
         this.classBtn(this.classActive, this.musicList.page)
         this.$nextTick(() => {
-          let fimlActive = this.musicList.list.findIndex(
-            (v) => v.id == data.data.id,
-          )
+          let fimlActive = this.musicList.list.findIndex((v) => v.id == data.data.id)
           this.musicBtn(data.data, fimlActive)
         })
         return
@@ -887,6 +833,9 @@ export default {
           letter-spacing: 0.9px;
           font-family: "ziyuanyuanti500W";
           margin-top: 5px;
+          position: absolute;
+          left: 0;
+          bottom: -30px;
         }
         .page_turning {
           width: 100%;
@@ -934,6 +883,7 @@ export default {
           left: 50%;
           top: 50%;
           transform: translate(-50%, -50%);
+          border-radius: 50%;
         }
       }
 
@@ -1106,6 +1056,7 @@ export default {
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
+        border-radius: 50%;
       }
     }
     .full_slider {

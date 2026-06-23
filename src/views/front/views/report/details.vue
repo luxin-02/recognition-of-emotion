@@ -107,7 +107,7 @@
         <div class="explain_text" v-html="reportData.suggest"></div>
       </template>
 
-      <template v-if="$route.query.type == '测评报告'">
+      <!-- <template v-if="$route.query.type == '测评报告'">
         <div class="mk2_title">
           <img src="@/assets/img/front/report/yuan.png" />
           推荐方案
@@ -121,7 +121,7 @@
             {{ item.title }}
           </div>
         </div>
-      </template>
+      </template> -->
 
       <br /><br />
     </div>

@@ -6,18 +6,17 @@
         <div class="mk_title"><i></i>基本信息</div>
         <div class="user_info">
           <div>
-            <div>
-              所属名称： <i>{{ reportData.gauge_title }}</i>
-            </div>
-            <div>
-              本次报告用时：
-              <i>{{ $formatTime(reportData.total_seconds, "HHH:mmm:sss") }}</i>
-            </div>
+            <div>所属名称： <i>情绪检测报告</i></div>
+            <!-- <div>
+            本次报告用时：
+            <i>{{ $formatTime(reportData.total_seconds, "HHH:mmm:sss") }}</i>
+          </div> -->
             <div>
               结果生成时间：
-              <i>{{
-                $formatDate2(reportData.add_time * 1000, "yyyy-MM-dd")
-              }}</i>
+              <i>{{ $formatDate2(reportData.add_time * 1000, "yyyy-MM-dd") }}</i>
+            </div>
+            <div>
+              账号类型： <i>{{ $store.getters.roleInfo.name }}</i>
             </div>
           </div>
           <div>
@@ -28,7 +27,7 @@
               性别： <i>{{ reportData.sex }}</i>
             </div>
             <div>
-              年龄： <i>{{ reportData.age }}</i>
+              年龄： <i>{{ reportData.birthdate }}</i>
             </div>
           </div>
           <div>
@@ -46,9 +45,7 @@
             <div>
               注册账号： <i>{{ reportData.username }}</i>
             </div>
-            <div>
-              账号类型： <i>{{ $store.getters.roleInfo.name }}</i>
-            </div>
+
             <div>
               联系电话： <i>{{ reportData.phone }}</i>
             </div>
@@ -57,63 +54,60 @@
         <br />
 
         <div class="mk_title"><i></i>报告结果</div>
-        <div class="report_score">
+        <div class="report_score" v-if="reportData.image_analysis">
           <div class="instrument">
-            <div class="fenshu">85<i>分</i></div>
-            <div class="zhpf">综合评分</div>
+            <div class="fenshu">{{ reportData.image_analysis.value[0] }}<i>分</i></div>
+            <div class="zhpf">{{ reportData.image_analysis.name[0] }}</div>
             <canvas ref="progressCanvas" class="progress"></canvas>
           </div>
           <div class="score_box1">
             <div>
-              <div class="text1">负面情绪得分：</div>
-              <div class="text2">85<i>分</i></div>
-              <div class="text3">优秀</div>
+              <div class="text1">{{ reportData.image_analysis.name[2] }}得分：</div>
+              <div class="text2">{{ reportData.image_analysis.value[2] }}<i>分</i></div>
+              <div class="text3">{{ reportData.image_analysis.level[2] }}</div>
             </div>
             <div>
-              <div class="text1">负面情绪得分：</div>
-              <div class="text2">85<i>分</i></div>
-              <div class="text3">优秀</div>
+              <div class="text1">{{ reportData.image_analysis.name[1] }}得分：</div>
+              <div class="text2">{{ reportData.image_analysis.value[1] }}<i>分</i></div>
+              <div class="text3">{{ reportData.image_analysis.level[1] }}</div>
             </div>
           </div>
           <div class="score_box2">
-            <div class="text1">负面情绪得分：</div>
-            <div class="text2">85<i>分</i></div>
-            <div class="text3">优秀</div>
+            <div class="text1">{{ reportData.image_analysis.name[3] }}得分：</div>
+            <div class="text2">{{ reportData.image_analysis.value[3] }}<i>分</i></div>
+            <div class="text3">{{ reportData.image_analysis.level[3] }}</div>
           </div>
         </div>
 
         <br />
 
         <!-- ----------- -->
-        <template>
+        <template v-if="reportData.negative">
           <br />
           <div class="mk_title"><i></i>负面情绪分析</div>
-          <img id="radarMap" :src="chartImg"  alt="" />
-          <div>
+          <img id="radarMap" :src="chartImg" alt="" />
+          <div v-for="(item, index) in this.reportData.negative.name" :key="index">
             <div class="mk2_title">
               <img src="@/assets/img/front/report/yuan.png" />
-              {{ "item.gradeName" }}
+              {{ item }}指数
             </div>
-            <div class="jdt">
-              <div
-                :style="{
-                  width: 50 + '%',
-                  backgroundColor: getJdtColor(50),
-                }"
-              >
-                -
-              </div>
-            </div>
+            <el-progress
+              :percentage="+reportData.negative.value[index]"
+              :color="customColors"
+              :stroke-width="10"
+              define-back-color="#091628"
+              text-color="#fff"
+            ></el-progress>
             <br />
             <div class="score_analyse">
               <div class="analyse_header">
-                <div>睡眠指数：</div>
-                <div>66</div>
-                <div>睡眠充足</div>
+                <div>{{ item }}指数：</div>
+                <div>{{ reportData.negative.value[index] }}</div>
+                <div>{{ reportData.negative.level[index] }}</div>
               </div>
               <div class="analyse_title"><i></i>分析总结</div>
               <div class="analyse_content">
-                抑郁指数分析：​​核心差异​​：抑郁障碍（单相）仅有抑郁发作；双相障碍则交替出现抑郁和躁狂/轻躁狂发作。关键鉴别点​​：情绪波动​​：双相患者抑可能伴易激惹、冲动行为，躁狂期表现为情绪高涨、精力过盛、睡眠需求减少起病年龄​​：双相障碍多在25岁前急性起病，抑郁障碍常于中年缓慢起病。家族史​​：双相障碍遗传倾向更显著（一级亲属患病风险高10倍）。治疗反应​​：抗抑郁药可能诱发双相患者转躁，需谨慎使用心境稳定剂。
+                {{ reportData.negative.result[index] }}
               </div>
             </div>
           </div>
@@ -124,9 +118,9 @@
 
         <!-- ----------- -->
         <template>
-          <div class="mk_title"><i></i>负面情绪分析</div>
+          <div class="mk_title"><i></i>正面情绪分析</div>
           <img id="roseChart" :src="emotionChartImg1" alt="" />
-          <div>
+          <div v-if="false">
             <div class="mk2_title">
               <img src="@/assets/img/front/report/yuan.png" />
               {{ "item.gradeName" }}
@@ -159,9 +153,9 @@
 
         <!-- ----------- -->
         <template>
-          <div class="mk_title"><i></i>负面情绪分析</div>
+          <div class="mk_title"><i></i>心理情绪分析</div>
           <img id="barGraph" :src="emotionChartImg2" alt="" />
-          <div>
+          <div v-if="false">
             <div class="mk2_title">
               <img src="@/assets/img/front/report/yuan.png" />
               {{ "item.gradeName" }}
@@ -192,19 +186,29 @@
         </template>
         <!-- ----------- -->
 
-        <div class="mk2_title">
+        <div class="mk_title"><i></i>情绪总体分析：</div>
+        <template v-if="reportData.image_analysis">
+          <div class="summarize" v-for="(item, i) in reportData.image_analysis.name" :key="item.name">
+            <div class="analyse_title"><i></i>{{ item }}分析：</div>
+            <div class="analyse_content">
+              {{ reportData.image_analysis.result[i] }}
+            </div>
+          </div>
+        </template>
+
+        <!-- <div class="mk2_title">
           <img src="@/assets/img/front/report/yuan.png" />
           推荐方案
         </div>
         <div class="project">
-          <!-- <div
+          <div
             v-for="(item, i) in reportData.recommend"
             :key="i"
             @click="toRecommend(item)"
           >
             {{ item.title }}
-          </div> -->
-        </div>
+          </div>
+        </div> -->
 
         <br /><br />
       </div>
@@ -327,12 +331,7 @@ export default {
       ctx.stroke()
 
       // 绘制进度半圆（使用渐变色）
-      const gradient = ctx.createLinearGradient(
-        centerX - radius,
-        centerY,
-        centerX + radius,
-        centerY,
-      )
+      const gradient = ctx.createLinearGradient(centerX - radius, centerY, centerX + radius, centerY)
       gradient.addColorStop(0, "#FF5F35")
       gradient.addColorStop(0.25, "#FF9328")
       gradient.addColorStop(0.5, "#FFCC31")
@@ -341,14 +340,7 @@ export default {
 
       const progress = Math.min(this.progressValue / 100, 1)
       ctx.beginPath()
-      ctx.arc(
-        centerX,
-        centerY,
-        radius,
-        startAngle,
-        startAngle + (endAngle - startAngle) * progress,
-        false,
-      )
+      ctx.arc(centerX, centerY, radius, startAngle, startAngle + (endAngle - startAngle) * progress, false)
       ctx.lineWidth = 12
       ctx.strokeStyle = gradient
       ctx.lineCap = "round"
@@ -634,6 +626,32 @@ export default {
           }
         }
       }
+      .analyse_title {
+        font-size: 20px;
+        color: #00aeff;
+        display: flex;
+        align-items: center;
+        margin: 15px;
+        > i {
+          width: 10px;
+          height: 10px;
+          background: #00acff;
+          display: inline-block;
+          border-radius: 50%;
+          margin-right: 8px;
+        }
+      }
+      .analyse_content {
+        font-size: 18px;
+        color: #333;
+        line-height: 26px;
+        margin: 0 15px 10px 15px;
+      }
+    }
+    .summarize {
+      width: 100%;
+      padding: 0 0 0 10px;
+      box-sizing: border-box;
       .analyse_title {
         font-size: 20px;
         color: #00aeff;

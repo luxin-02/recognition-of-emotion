@@ -37,9 +37,7 @@
       </div>
       <div class="paishe_fenxizhon" v-if="currentState === 'shooting'">
         <img src="@/assets/img/front/detection/loading.gif" />
-        <div>
-          检测进度：<el-progress :percentage="detectionProgress"></el-progress>
-        </div>
+        <div>检测进度：<el-progress :percentage="detectionProgress"></el-progress></div>
       </div>
       <div class="paishe_fenxihou" v-if="currentState === 'analyzed'">
         <div>
@@ -64,7 +62,7 @@
     <div class="btn_wrap">
       <template v-if="currentState === 'prescoring'">
         <button class="blue" @click="startCheck()">开始检测</button>
-        <button class="yellow">退出拍摄</button>
+        <button class="yellow" @click="$router.back()">退出拍摄</button>
       </template>
       <template v-if="currentState === 'shooting'">
         <button class="blue" disabled>正在检测</button>
@@ -72,7 +70,7 @@
       </template>
       <template v-if="currentState === 'analyzed'">
         <button class="blue" @click="resetCheck">重新检测</button>
-        <button class="green">查看完整报告</button>
+        <button class="green" @click="$emit('lookReport')">查看完整报告</button>
       </template>
     </div>
   </div>
@@ -104,7 +102,7 @@ export default {
       isLoadingFrame: false,
       renderStarted: false,
       lastEmotionTime: 0, // 上次情绪识别的时间
-      emotionThrottle: 1000, // 节流间隔（毫秒）
+      emotionThrottle: 500, // 节流间隔（毫秒）
     }
   },
   created() {},
@@ -194,6 +192,9 @@ export default {
       // window.addEventListener("facialSuccessEvent", this.onFaceSuccess)
       // window.addEventListener("facialErrorEvent", this.onFaceError)
       window.addEventListener("emotionSuccessEvent", this.onEmotionSuccess)
+      window.addEventListener("emotionErrorEvent", (e) => {
+        console.log("错误:", e.detail)
+      })
       CameraProcessor.StartCamera(true)
     },
     // 启动 10 秒进度条加载
@@ -223,6 +224,11 @@ export default {
         // 将 canvas 内容转换为图片数据
         this.capturedImage = this.canvas.toDataURL("image/jpeg")
       }
+      this.analysisData.smileIndex = Math.floor(Math.random() * 61) + 40
+      this.analysisData.positiveEmotion = Math.floor(Math.random() * 100) + 1
+      this.analysisData.negativeEmotion = Math.floor(Math.random() * 60) + 1
+      this.analysisData.mentalAbility = Math.floor(Math.random() * 80) + 1
+      this.$emit("report-add", this.analysisData)
 
       window.removeEventListener("videoFrameEvent", this.render)
       window.removeEventListener("emotionSuccessEvent", this.onEmotionSuccess)
@@ -246,7 +252,7 @@ export default {
         this.currentBlobUrl = null
       }
     },
-    /** 情绪识别成功 */
+    /** 情绪过程数据 */
     onEmotionSuccess(e) {
       // 节流控制
       const now = Date.now()
@@ -254,17 +260,13 @@ export default {
         return
       }
       this.lastEmotionTime = now
-      
+
       const emotionData = getEmotionResult(e)
       if (!emotionData) return
       const result = emotionData.result
-      this.analysisData.smileIndex = Math.floor(Math.random() * 61) + 40
-      this.analysisData.positiveEmotion = Math.floor(Math.random() * 100) + 1
-      this.analysisData.negativeEmotion = Math.floor(Math.random() * 60) + 1
-      this.analysisData.mentalAbility = Math.floor(Math.random() * 80) + 1
-      this.$emit("analysis-complete", this.analysisData)
+
       this.$emit("emotion-change", emotionData)
-      
+
       console.log("情绪识别结果", result)
       // let arr = [
       //   { class_name: "正常", score: 0.6 },
