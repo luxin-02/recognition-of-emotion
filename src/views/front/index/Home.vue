@@ -68,7 +68,7 @@
           <div @click="$router.push('/clockIn')"><i>心情记录</i></div>
           <div @click="$router.push('/gameList')"><i>心理体验</i></div>
           <div @click="$router.push('/scale')"><i>心理评估</i></div>
-          <div @click="$router.push('/report')"><i>报告中心</i></div>
+          <div @click="toReport"><i>报告中心</i></div>
         </div>
       </div>
     </div>
@@ -140,6 +140,14 @@ export default {
     await this.getTrainData()
   },
   methods: {
+    toReport() {
+      if (this.$store.getters.isGuest) {
+        this.$myMessage.error("游客暂无权限")
+        return
+      }
+
+      this.$router.push("/report")
+    },
     // 获取初始设置
     async getSystemInfo() {
       const { data } = await frontApiSettingInfoInLogin()

@@ -170,6 +170,11 @@ export default {
 
     // 开始识别
     startCheck() {
+      if (this.$store.getters.isGuest) {
+        this.$myMessage.error("游客暂无权限")
+        return
+      }
+
       try {
         this.openCamera()
       } catch (e) {
