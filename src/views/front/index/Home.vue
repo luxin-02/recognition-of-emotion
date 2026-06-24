@@ -23,8 +23,13 @@
           <div class="user_info">
             <div>姓名：{{ $store.getters.userInfo.nickname }}</div>
             <div>账号：{{ $store.getters.userInfo.username }}</div>
-            <div v-if="$store.getters.userInfo.depts.length">
-              部门：{{ $store.getters.userInfo.depts.length ? $store.getters.userInfo.depts[0].class_name : "无" }}
+            <div
+              v-if="
+                Array.isArray($store.getters.userInfo.depts) &&
+                $store.getters.userInfo.depts.length
+              "
+            >
+              部门：{{ $store.getters.userInfo.depts[0].class_name }}
             </div>
             <i>个人资料</i>
           </div>
