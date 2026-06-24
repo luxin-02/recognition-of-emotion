@@ -235,7 +235,7 @@ function getRightTopValueData(result) {
     })
     if (!matchedNames.length) {
       return {
-        value: 0,
+        value: name === "兴奋指数" ? 5 : 0,
         name,
       }
     }
