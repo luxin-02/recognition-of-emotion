@@ -128,6 +128,21 @@ export default {
       this.positiveData = ZMrightBottom
       this.negativeData = FMrightBottom
     },
+    resetDetectionData() {
+      this.LeftTopValueData = [0, 0, 0, 0, 0, 0, 0]
+      this.leftBottomValueData = [0, 0, 0, 0, 0, 0, 0, 0]
+      this.rightTopValueData = [
+        { value: 0, name: "满足指数" },
+        { value: 0, name: "放松指数" },
+        { value: 0, name: "兴奋指数" },
+        { value: 0, name: "乐观指数" },
+        { value: 0, name: "自信指数" },
+      ]
+      this.psychologyData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      this.positiveData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      this.negativeData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      this.analysisData = ""
+    },
     async handleReportAdd(analysisData) {
       this.analysisData = analysisData
       const { data } = await addSmileAssess({
@@ -174,6 +189,7 @@ export default {
           message: data.msg,
         })
         this.detailsId = data.data.id
+        this.resetDetectionData()
       }
     },
 
