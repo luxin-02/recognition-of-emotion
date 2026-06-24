@@ -461,7 +461,12 @@ export default {
     },
     //播放暂停
     playMusic() {
-      if (!this.currentMusic.music_url) return
+      if (!this.currentMusic.music_url) {
+        if (this.musicList.list.length > 0) {
+          this.musicBtn(this.musicList.list[0], 0)
+        }
+        return
+      }
       if (this.playPause) {
         this.$refs.audioref.pause()
         this.playPause = false
