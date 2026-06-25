@@ -1,15 +1,11 @@
 <template>
   <div class="userInfo">
-    <div class="module_title">个人信息</div>
+    <div class="module_title">{{ active == 0 ? "个人资料" : "档案信息" }}</div>
 
     <div class="switchover">
       <div class="left">
-        <div :class="active == 0 ? 'active' : ''" @click="active = 0">
-          个人资料
-        </div>
-        <div :class="active == 1 ? 'active' : ''" @click="active = 1">
-          使用档案
-        </div>
+        <div :class="active == 0 ? 'active' : ''" @click="active = 0">个人资料</div>
+        <div :class="active == 1 ? 'active' : ''" @click="active = 1">使用档案</div>
       </div>
       <div class="line"></div>
       <div class="right">

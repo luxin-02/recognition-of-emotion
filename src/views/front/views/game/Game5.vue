@@ -634,6 +634,7 @@ div.user-info-box {
         }
         > div.body {
           display: flex;
+          justify-content: center;
           > div {
             position: relative;
             width: 700px;

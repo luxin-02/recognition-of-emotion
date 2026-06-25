@@ -89,38 +89,74 @@ import RightTop from "./components/right_top.vue"
 import RightBottom from "./components/right_bottom.vue"
 import Middle from "./components/middle.vue"
 import { addSmileAssess } from "@/server/api/detection"
+
+const RIGHT_TOP_NAMES = ["满足指数", "放松指数", "兴奋指数", "乐观指数", "自信指数"]
+const NEGATIVE_NAMES = ["焦虑", "抑郁", "压力", "失眠", "疲劳", "易怒", "放松"]
+const MENTAL_ABILITY_NAMES = [
+  "抗压指数",
+  "记忆力指数",
+  "适应力指数",
+  "专注力指数",
+  "自控力指数",
+  "心理负荷指数",
+  "情绪平衡指数",
+  "情绪稳定指数",
+]
+const SUMMARY_NAMES = ["微笑指数", "正面情绪", "负面情绪", "心理能力"]
+const TREND_NAMES = {
+  psychology: "心理能力",
+  positive: "正面情绪",
+  negative: "负面情绪",
+}
+
+function createZeroArray(length) {
+  return Array(length).fill(0)
+}
+
+function createRightTopData() {
+  return RIGHT_TOP_NAMES.map((name) => ({ name, value: 0 }))
+}
+
+function createInitialAnalysisData() {
+  return {
+    smileIndex: 0,
+    positiveEmotion: 0,
+    negativeEmotion: 0,
+    mentalAbility: 0,
+  }
+}
+
+function createInitialDetectionData() {
+  return {
+    LeftTopValueData: createZeroArray(NEGATIVE_NAMES.length),
+    leftBottomValueData: createZeroArray(MENTAL_ABILITY_NAMES.length),
+    rightTopValueData: createRightTopData(),
+    psychologyData: createZeroArray(12),
+    positiveData: createZeroArray(12),
+    negativeData: createZeroArray(12),
+    analysisData: createInitialAnalysisData(),
+  }
+}
+
 export default {
   components: { LeftTop, LeftBottom, RightTop, RightBottom, Middle },
   data() {
     return {
-      LeftTopValueData: [0, 0, 0, 0, 0, 0, 0],
-      leftBottomValueData: [0, 0, 0, 0, 0, 0, 0, 0],
-      rightTopValueData: [
-        { value: 0, name: "满足指数" },
-        { value: 0, name: "放松指数" },
-        { value: 0, name: "兴奋指数" },
-        { value: 0, name: "乐观指数" },
-        { value: 0, name: "自信指数" },
-      ],
-      psychologyData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      positiveData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      negativeData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      analysisData: "",
-
+      ...createInitialDetectionData(),
       detailsId: "",
     }
   },
-  created() {},
-  mounted() {},
   methods: {
-    handleEmotionChange({
-      leftValueData,
-      leftBottomValueData,
-      rightTopValueData,
-      ZMrightBottom,
-      FMrightBottom,
-      XLrightBottom,
-    }) {
+    handleEmotionChange(payload) {
+      const {
+        leftValueData,
+        leftBottomValueData,
+        rightTopValueData,
+        ZMrightBottom,
+        FMrightBottom,
+        XLrightBottom,
+      } = payload
+
       this.LeftTopValueData = leftValueData
       this.leftBottomValueData = leftBottomValueData
       this.rightTopValueData = rightTopValueData
@@ -129,60 +165,42 @@ export default {
       this.negativeData = FMrightBottom
     },
     resetDetectionData() {
-      this.LeftTopValueData = [0, 0, 0, 0, 0, 0, 0]
-      this.leftBottomValueData = [0, 0, 0, 0, 0, 0, 0, 0]
-      this.rightTopValueData = [
-        { value: 0, name: "满足指数" },
-        { value: 0, name: "放松指数" },
-        { value: 0, name: "兴奋指数" },
-        { value: 0, name: "乐观指数" },
-        { value: 0, name: "自信指数" },
-      ]
-      this.psychologyData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-      this.positiveData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-      this.negativeData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-      this.analysisData = ""
+      Object.assign(this, createInitialDetectionData())
     },
-    async handleReportAdd(analysisData) {
-      this.analysisData = analysisData
-      const { data } = await addSmileAssess({
-        image_analysis: this.analysisData, // 总分
+    createReportPayload() {
+      return {
         image_analysis: {
-          name: ["微笑指数", "正面情绪", "负面情绪", "心理能力"],
+          name: SUMMARY_NAMES,
           value: [
             this.analysisData.smileIndex,
             this.analysisData.positiveEmotion,
             this.analysisData.negativeEmotion,
             this.analysisData.mentalAbility,
           ],
-        }, // 总分
+        },
         comprehensive: [
-          { name: "心理能力", value: this.psychologyData },
-          { name: "正面情绪", value: this.positiveData },
-          { name: "负面情绪", value: this.negativeData },
-        ], // 综合分析
+          { name: TREND_NAMES.psychology, value: this.psychologyData },
+          { name: TREND_NAMES.positive, value: this.positiveData },
+          { name: TREND_NAMES.negative, value: this.negativeData },
+        ],
         negative: {
-          name: ["焦虑", "抑郁", "压力", "失眠", "疲劳", "易怒", "放松"],
+          name: NEGATIVE_NAMES,
           value: this.LeftTopValueData,
-        }, // 负面情绪
+        },
         positive: {
-          name: ["满足指数", "放松指数", "兴奋指数", "乐观指数", "自信指数"],
+          name: RIGHT_TOP_NAMES,
           value: this.rightTopValueData,
-        }, // 正面情绪
+        },
         mental_ability: {
-          name: [
-            "抗压指数",
-            "记忆力指数",
-            "适应力指数",
-            "专注力指数",
-            "自控力指数",
-            "心理负荷指数",
-            "情绪平衡指数",
-            "情绪稳定指数",
-          ],
+          name: MENTAL_ABILITY_NAMES,
           value: this.leftBottomValueData,
-        }, // 心理能力
-      })
+        },
+      }
+    },
+    async handleReportAdd(analysisData) {
+      this.analysisData = analysisData
+      const { data } = await addSmileAssess(this.createReportPayload())
+
       if (data.code == this.$global.successCode) {
         this.$myMessage({
           type: "font-success",
@@ -193,8 +211,8 @@ export default {
       }
     },
 
-    handleLookReport(){
-      if(!this.detailsId){
+    handleLookReport() {
+      if (!this.detailsId) {
         this.$myMessage({
           type: "font-error",
           message: "请先检测",
@@ -208,9 +226,8 @@ export default {
           type: "检测报告",
         },
       })
-    }
+    },
   },
-  beforeDestroy() {},
 }
 </script>
 
@@ -263,7 +280,6 @@ export default {
               height: 50px;
               color: #fff;
               text-align: center;
-              background-image: url();
               background-size: 100% 100%;
               background-image: url("@/assets/img/front/detection/指标.png");
               > p {
@@ -277,10 +293,6 @@ export default {
             }
           }
         }
-      }
-    }
-    > .left {
-      > div {
       }
     }
     > .middle {

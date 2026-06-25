@@ -326,6 +326,9 @@ export default {
               background-size: 100% 100%;
               padding: 13px 0 0 15px;
               box-sizing: border-box;
+              &:nth-child(2n) {
+                background-image: url(@/assets/img/front/smileCheck/气泡2.png);
+              }
               > img {
                 width: 73px;
                 height: 73px;

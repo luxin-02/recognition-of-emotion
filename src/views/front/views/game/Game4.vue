@@ -313,6 +313,7 @@ div.user-info-box {
                   font-weight: 700;
                   color: #333333;
                   margin-bottom: 24px;
+                  text-align: center;
                 }
                 > div {
                   width: 375px;

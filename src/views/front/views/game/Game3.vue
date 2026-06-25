@@ -28,10 +28,7 @@
           <div class="right">
             <div>
               <p>游戏规则</p>
-              <div>
-                来比一比眼力吧，请点击和其他 图片不同的图，成功后将自动进入
-                下一关。失败你将被留下。
-              </div>
+              <div>来比一比眼力吧，请点击和其他图片不同的图，成功后将自动进入下一关。失败你将被留下。</div>
             </div>
             <div>
               <img src="@/assets/images/game/game3/p.png" alt="" />
@@ -110,7 +107,7 @@ export default {
           this.isClick = false
           await reportApiAdd({
             cat_name: "心理训练",
-            game_name: "眼里大比拼",
+            game_name: "眼力大比拼",
             score: 100,
             seconds: this.time,
           }).then(({ data }) => {
@@ -193,12 +190,9 @@ export default {
     },
     loop() {
       this.list = []
-      this.list = Array.from(
-        { length: Math.pow(this.level, 2) },
-        (item, index) => {
-          return this.img1
-        },
-      )
+      this.list = Array.from({ length: Math.pow(this.level, 2) }, (item, index) => {
+        return this.img1
+      })
       let item = this.img2
       this.list.splice(this.getRandomArrayIndex(this.list), 1, item)
       this.list = this.reset(this.list, this.level)
@@ -448,6 +442,7 @@ div.user-info-box {
                 font-weight: 700;
                 color: #333333;
                 margin-bottom: 24px;
+                text-align: center;
               }
               > div {
                 width: 333px;

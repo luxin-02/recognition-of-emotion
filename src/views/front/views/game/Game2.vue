@@ -438,6 +438,7 @@ div.user-info-box {
                   font-weight: 700;
                   color: #ffffff;
                   margin-bottom: 10px;
+                  text-align: center;
                 }
                 > div {
                   text-indent: 2em;

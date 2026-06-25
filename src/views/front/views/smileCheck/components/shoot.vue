@@ -2,6 +2,7 @@
   <transition name="fade">
     <div class="popup_mask" v-if="isShow">
       <div class="shoot_wrap">
+        <div class="title">微笑打卡</div>
         <div class="ph_wrap">
           <canvas
             ref="faceCanvas"
@@ -20,10 +21,7 @@
             "
           />
         </div>
-        <div
-          class="tips_text"
-          :class="{ analyzed: currentState === 'analyzed' }"
-        >
+        <div class="tips_text" :class="{ analyzed: currentState === 'analyzed' }">
           <i class="el-icon-success" v-if="currentState === 'analyzed'"></i>
           {{ tipsText }}
         </div>
@@ -342,6 +340,15 @@ export default {
     padding: 160px 0 0 0;
     box-sizing: border-box;
     position: relative;
+    .title {
+      font-size: 28px;
+      color: #fff;
+      position: absolute;
+      top: 95px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: "ziyuanyuanti500W";
+    }
     .ph_wrap {
       width: 538px;
       height: 488px;

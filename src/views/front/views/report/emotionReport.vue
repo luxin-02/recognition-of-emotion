@@ -387,6 +387,7 @@ export default {
       option && this.roseMapChart.setOption(option)
     },
     barGraphChartFn(data, series) {
+      console.log(data, series)
       let option = {
         animation: false,
         grid: {
@@ -434,7 +435,7 @@ export default {
           // 背景柱
           {
             type: "bar",
-            data: series,
+            data: new Array(this.leftBottomXData.length).fill(100),
             barWidth: 42,
             barGap: "-100%",
             itemStyle: {
@@ -452,11 +453,11 @@ export default {
             symbolMargin: 2,
             symbolSize: [35, 13],
             symbolBoundingData: 100,
-            data: [40, 38, 32, 30, 28, 26, 24],
+            data: series,
             z: 2,
             itemStyle: {
               color: (params) => {
-                const colors = ["#18c8ff", "#ffee00", "#18d27c", "#18c8ff", "#ffee00", "#18c8ff", "#5d5dff"]
+                const colors = ["#18c8ff", "#ffee00", "#18d27c", "#18c8ff", "#ffee00", "#18c8ff", "#5d5dff",'#00baff']
 
                 return colors[params.dataIndex]
               },

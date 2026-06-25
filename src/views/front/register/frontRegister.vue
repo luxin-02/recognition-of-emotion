@@ -66,7 +66,7 @@
           </div>
 
           <div class="user_form">
-            输入账号 &nbsp;
+            选择部门 &nbsp;
             <el-cascader
               class="depCascader"
               v-model="depId"
@@ -82,11 +82,11 @@
                 checkStrictly: true,
               }"
             ></el-cascader>
-            <img
+            <!-- <img
               class="icon"
               style="width: 0.2rem; height: 0.18rem"
               src="@/assets/img/front/register/部门.png"
-            />
+            /> -->
             <p>*选择你的部门，方便管理员确认</p>
           </div>
         </div>

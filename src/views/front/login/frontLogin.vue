@@ -2,7 +2,7 @@
   <div class="login">
     <div class="core_warp">
       <!-- <div class="system_title">{{ $store.getters.sysInfo.name }}</div> -->
-      <p class="welcome">账号登陆</p>
+      <p class="welcome">账号登录</p>
       <el-input
         @keydown.enter.native="login"
         placeholder="输入账号"

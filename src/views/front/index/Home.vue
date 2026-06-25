@@ -23,12 +23,7 @@
           <div class="user_info">
             <div>姓名：{{ $store.getters.userInfo.nickname }}</div>
             <div>账号：{{ $store.getters.userInfo.username }}</div>
-            <div
-              v-if="
-                Array.isArray($store.getters.userInfo.depts) &&
-                $store.getters.userInfo.depts.length
-              "
-            >
+            <div v-if="Array.isArray($store.getters.userInfo.depts) && $store.getters.userInfo.depts.length">
               部门：{{ $store.getters.userInfo.depts[0].class_name }}
             </div>
             <i>个人资料</i>
@@ -54,7 +49,9 @@
           <div>
             <div class="model_tetx">
               <div class="xlly">心理疗愈</div>
-              <div class="xly">欢迎踏入心灵栖息地 <br />开启心灵之旅！</div>
+              <div class="xly">
+                欢迎踏入<i style="color: #ddbc45">心灵</i>栖息地 <br />开启<i style="color: #ddbc45">心灵之旅</i>！
+              </div>
               <button>开始探索</button>
             </div>
             <div class="item_list">

@@ -37,9 +37,7 @@
       </div>
       <div class="paishe_fenxizhon" v-if="currentState === 'shooting'">
         <img src="@/assets/img/front/detection/loading.gif" />
-        <div>
-          检测进度：<el-progress :percentage="detectionProgress"></el-progress>
-        </div>
+        <div>检测进度：<el-progress :percentage="detectionProgress"></el-progress></div>
       </div>
       <div class="paishe_fenxihou" v-if="currentState === 'analyzed'">
         <div>
@@ -64,7 +62,7 @@
     <div class="btn_wrap">
       <template v-if="currentState === 'prescoring'">
         <button class="blue" @click="startCheck()">开始检测</button>
-        <button class="yellow">退出拍摄</button>
+        <button class="yellow" @click="$router.back()">退出拍摄</button>
       </template>
       <template v-if="currentState === 'shooting'">
         <button class="blue" disabled>正在检测</button>
@@ -72,7 +70,7 @@
       </template>
       <template v-if="currentState === 'analyzed'">
         <button class="blue" @click="resetCheck">重新检测</button>
-        <button class="green">查看完整报告</button>
+        <button class="green" @click="$emit('lookReport')">查看完整报告</button>
       </template>
     </div>
   </div>
@@ -80,6 +78,7 @@
 
 <script>
 import { createCanvasLoading } from "@/mixins/shoot/util.js"
+import { getEmotionResult } from "@/utils/emotionCalculation.js"
 export default {
   data() {
     return {
@@ -97,6 +96,13 @@ export default {
       canvasLoading: null,
       capturedImage: null,
       progressTimer: null,
+      lastFrameTime: 0,
+      frameInterval: 33, // 控制帧率 ~30fps，单位毫秒
+      currentBlobUrl: null,
+      isLoadingFrame: false,
+      renderStarted: false,
+      lastEmotionTime: 0, // 上次情绪识别的时间
+      emotionThrottle: 500, // 节流间隔（毫秒）
     }
   },
   created() {},
@@ -113,26 +119,62 @@ export default {
   },
   methods: {
     render(e) {
-      if (this.canvasLoading) {
+      // 帧率控制 - 限制处理频率
+      const now = performance.now()
+      if (now - this.lastFrameTime < this.frameInterval) {
+        return
+      }
+      this.lastFrameTime = now
+
+      // 只在第一帧时停止加载动画
+      if (this.canvasLoading && !this.renderStarted) {
         this.canvasLoading.stop()
         this.canvasLoading = null
         this.currentState = "shooting"
-        // 启动 10 秒进度条加载
+        this.renderStarted = true
         this.startProgressLoading()
+        return // 第一帧不渲染，等待下一帧
       }
+
+      // 如果已在加载上一帧，跳过本帧
+      if (this.isLoadingFrame) {
+        return
+      }
+
       const frameData = e.detail.frameData
-      // 渲染到 Canvas
       const blob = new Blob([new Uint8Array(frameData)], { type: "image/jpeg" })
-      const img = this.imgWarp
-      img.onload = () => {
-        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
-        URL.revokeObjectURL(img.src) // 释放内存
+
+      // 释放上一个 ObjectURL
+      if (this.currentBlobUrl) {
+        URL.revokeObjectURL(this.currentBlobUrl)
       }
-      img.src = URL.createObjectURL(blob)
+
+      this.currentBlobUrl = URL.createObjectURL(blob)
+      this.isLoadingFrame = true
+
+      // 使用 requestAnimationFrame 确保在浏览器重绘前完成
+      requestAnimationFrame(() => {
+        const img = this.imgWarp
+        img.onload = () => {
+          if (this.ctx && this.canvas) {
+            this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+          }
+          this.isLoadingFrame = false
+        }
+        img.onerror = () => {
+          this.isLoadingFrame = false
+        }
+        img.src = this.currentBlobUrl
+      })
     },
 
     // 开始识别
     startCheck() {
+      if (this.$store.getters.isGuest) {
+        this.$myMessage.error("游客暂无权限")
+        return
+      }
+
       try {
         this.openCamera()
       } catch (e) {
@@ -155,6 +197,9 @@ export default {
       // window.addEventListener("facialSuccessEvent", this.onFaceSuccess)
       // window.addEventListener("facialErrorEvent", this.onFaceError)
       window.addEventListener("emotionSuccessEvent", this.onEmotionSuccess)
+      window.addEventListener("emotionErrorEvent", (e) => {
+        console.log("错误:", e.detail)
+      })
       CameraProcessor.StartCamera(true)
     },
     // 启动 10 秒进度条加载
@@ -184,10 +229,16 @@ export default {
         // 将 canvas 内容转换为图片数据
         this.capturedImage = this.canvas.toDataURL("image/jpeg")
       }
+      this.analysisData.smileIndex = Math.floor(Math.random() * 61) + 40
+      this.analysisData.positiveEmotion = Math.floor(Math.random() * 100) + 1
+      this.analysisData.negativeEmotion = Math.floor(Math.random() * 60) + 1
+      this.analysisData.mentalAbility = Math.floor(Math.random() * 80) + 1
+      this.$emit("report-add", this.analysisData)
 
       window.removeEventListener("videoFrameEvent", this.render)
       window.removeEventListener("emotionSuccessEvent", this.onEmotionSuccess)
       CameraProcessor.StopCamera()
+
       // 切换到分析完成状态
       this.currentState = "analyzed"
     },
@@ -200,14 +251,27 @@ export default {
       // window.removeEventListener("facialErrorEvent", this.onFaceError)
       window.removeEventListener("emotionSuccessEvent", this.onEmotionSuccess)
       CameraProcessor.StopCamera()
+      // 清理 ObjectURL
+      if (this.currentBlobUrl) {
+        URL.revokeObjectURL(this.currentBlobUrl)
+        this.currentBlobUrl = null
+      }
     },
-    /** 情绪识别成功 */
+    /** 情绪过程数据 */
     onEmotionSuccess(e) {
-      const result = e.detail?.data?.data
-      if (!result || !Array.isArray(result)) {
-        console.warn("情绪识别结果无效")
+      // 节流控制
+      const now = Date.now()
+      if (now - this.lastEmotionTime < this.emotionThrottle) {
         return
       }
+      this.lastEmotionTime = now
+
+      const emotionData = getEmotionResult(e)
+      if (!emotionData) return
+      const result = emotionData.result
+
+      this.$emit("emotion-change", emotionData)
+
       console.log("情绪识别结果", result)
       // let arr = [
       //   { class_name: "正常", score: 0.6 },
@@ -223,21 +287,12 @@ export default {
       //   { class_name: "害怕", score: 0 },
       //   { class_name: "狂躁", score: 0.1 },
       // ]
-      this.setMood(result)
-    },
-    /** 设置情绪数据 */
-    setMood(result) {
-      try {
-        console.log("计算指标")
-      } catch (error) {
-        console.error("错误详情:", error)
-        console.error("错误堆栈:", error.stack)
-      }
     },
     resetCheck() {
       this.currentState = "prescoring"
       this.detectionProgress = 0
       this.capturedImage = null
+      this.renderStarted = false
       // 清除进度条计时器
       if (this.progressTimer) {
         clearInterval(this.progressTimer)
@@ -247,6 +302,11 @@ export default {
         this.canvasLoading.stop()
         this.canvasLoading = null
       }
+      // 清理 ObjectURL
+      if (this.currentBlobUrl) {
+        URL.revokeObjectURL(this.currentBlobUrl)
+        this.currentBlobUrl = null
+      }
     },
   },
   beforeDestroy() {
@@ -254,6 +314,11 @@ export default {
     if (this.progressTimer) {
       clearInterval(this.progressTimer)
       this.progressTimer = null
+    }
+    // 清理 ObjectURL
+    if (this.currentBlobUrl) {
+      URL.revokeObjectURL(this.currentBlobUrl)
+      this.currentBlobUrl = null
     }
   },
 }

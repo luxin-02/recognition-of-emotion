@@ -11,7 +11,7 @@
               type="text"
               placeholder="请输入您的账号"
             />
-            <img class="icon" src="@/assets/img/front/register/账号.png" />
+            <!-- <img class="icon" src="@/assets/img/front/register/账号.png" /> -->
             <template v-if="form.account != ''">
               <img
                 class="ifimg"
@@ -40,11 +40,11 @@
                 checkStrictly: true,
               }"
             ></el-cascader>
-            <img
+            <!-- <img
               class="icon"
               style="height: 0.17rem; margin-top: 0.02rem"
               src="@/assets/img/front/register/部门.png"
-            />
+            /> -->
           </div>
         </div>
         <div class="username">

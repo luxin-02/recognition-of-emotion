@@ -19,8 +19,7 @@ export default [
   {
     path: "/fingerprintLogin",
     name: "FingerprintLogin",
-    component: () =>
-      import("@/views/front/login/fingerprintLogin/fingerprintLogin.vue"),
+    component: () => import("@/views/front/login/fingerprintLogin/fingerprintLogin.vue"),
     meta: {
       title: "指纹登录",
       hideRetreat: true,
@@ -50,8 +49,7 @@ export default [
   {
     path: "/retrievePassword",
     name: "retrievePassword",
-    component: () =>
-      import("@/views/front/retrievePassword/retrievePassword.vue"),
+    component: () => import("@/views/front/retrievePassword/retrievePassword.vue"),
     meta: {
       title: "忘记密码",
       hideRetreat: true,
@@ -109,16 +107,14 @@ export default [
 
       {
         path: "/specialist", //专家列表
-        component: () =>
-          import("@/views/front/views/specialist/specialist.vue"),
+        component: () => import("@/views/front/views/specialist/specialist.vue"),
         meta: {
           title: "心理咨询",
         },
       },
       {
         path: "/specialist/reservation", //预约提交
-        component: () =>
-          import("@/views/front/views/specialist/reservation.vue"),
+        component: () => import("@/views/front/views/specialist/reservation.vue"),
         meta: {
           title: "心理咨询",
         },
@@ -291,7 +287,7 @@ export default [
           title: "报告详情",
         },
       },
-        {
+      {
         path: "/report/emotionReport",
         component: () => import("@/views/front/views/report/emotionReport.vue"),
         meta: {
@@ -314,8 +310,7 @@ export default [
       },
       {
         path: "/smileCheck/statistics",
-        component: () =>
-          import("@/views/front/views/smileCheck/statistics.vue"),
+        component: () => import("@/views/front/views/smileCheck/statistics.vue"),
         meta: {
           title: "微笑打卡统计",
         },
@@ -325,6 +320,13 @@ export default [
         component: () => import("@/views/front/views/detection/index.vue"),
         meta: {
           title: "情绪检测",
+        },
+      },
+      {
+        path: "/EmotionDetector",
+        component: () => import("@/views/front/views/EmotionDetector/index.vue"),
+        meta: {
+          title: "情绪识别",
         },
       },
     ],

@@ -13,7 +13,7 @@
       <div v-else class="step2">
         <div class="top">
           <!-- <div>游戏进度：{{ level }}/∞</div> -->
-          <div>游戏进度：{{ 1 }}/∞</div>
+          <!-- <div>游戏进度：{{ 1 }}/∞</div> -->
           <div>当前步数：{{ steps }}</div>
           <div>用时：{{ time }} 秒</div>
         </div>

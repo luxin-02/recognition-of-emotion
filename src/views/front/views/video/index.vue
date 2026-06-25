@@ -131,8 +131,8 @@
               音量
             </div>
 
-            <div class="volume_box">
-              <!-- <volumeVue
+            <!-- <div class="volume_box">
+              <volumeVue
                 :value="volumeProgress"
                 :isShowVolume="isVolume"
                 :dragging="dragging"
@@ -142,8 +142,8 @@
                     dragging = val;
                   }
                 "
-              /> -->
-            </div>
+              />
+            </div> -->
 
             <div class="volume_box" v-show="isVolume">
               <p class="number">{{ volumeProgress }}%</p>

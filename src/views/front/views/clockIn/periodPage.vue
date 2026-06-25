@@ -39,7 +39,8 @@
               >天
             </p>
           </div>
-          <div ref="statistics" class="statistics"></div>
+          <div ref="statistics" class="statistics"
+            :style="{ transform: `scale(${scale})` }"></div>
 
           <ul v-if="statisticsData.length > 0">
             <li class="mood-1">
@@ -437,6 +438,7 @@ export default {
           width: 250PX;
           height: 250PX;
           margin: 35px 0 0 40px;
+          transform-origin: 0 0;
         }
       }
 

@@ -606,7 +606,7 @@ export default {
           },
           axisLabel: {
             color: "#00cfff",
-            fontSize: 16,
+            fontSize: 12,
           },
         },
         yAxis: {
@@ -625,7 +625,7 @@ export default {
           },
           axisLabel: {
             color: "#333",
-            fontSize: 18,
+            fontSize: 16,
           },
         },
         series: [
@@ -701,7 +701,7 @@ export default {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background-image: url(@/assets/img/front/index/kuang.png);
+  background-image: url(@/assets/img/front/report/kuang.png);
   background-size: 100% 100%;
   box-sizing: border-box;
   padding: 160px 0 0 45px;

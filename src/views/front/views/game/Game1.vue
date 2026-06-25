@@ -205,7 +205,7 @@ export default {
                   this.clearTimer()
                   this.isVisible = true
                   this.strText = `
-                                        <p>恭喜你，游戏通关成功！本次游戏能达到 最少步骤为${
+                                        <p>恭喜你，游戏通关成功！本次游戏能达到最少步骤为${
                                           this.picList.length / 2
                                         }步。</p>
                                         <p>你本次游戏总计：${

@@ -85,10 +85,7 @@ export default {
       this.isFail = false
       const that = this
       try {
-        if (
-          FingerprintObj &&
-          JSON.parse(FingerprintObj.isOpenCamera()).success == true
-        ) {
+        if (FingerprintObj && JSON.parse(FingerprintObj.isOpenCamera()).success == true) {
           setTimeout(() => {
             JSON.stringify(FingerprintObj.faceCapture())
             setTimeout(async () => {
@@ -213,7 +210,7 @@ export default {
         margin-bottom: 60px;
       }
       .login_btn {
-        margin: 0 auto;
+        // margin: 0 auto;
         color: #fff;
         font-family: "ziyuanyuanti500W";
         font-size: 18px;
@@ -224,6 +221,10 @@ export default {
         border: 1px solid #00a8ff;
         border-radius: 4px;
         box-shadow: 0px 0px 20px 0px #0078ff;
+        position: absolute;
+        top: 400px;
+        left: 50%;
+        transform: translate(-50%);
       }
     }
     .right {
