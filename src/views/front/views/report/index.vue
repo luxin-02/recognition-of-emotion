@@ -45,7 +45,7 @@
     </div>
 
     <div class="list_wrap">
-      <ul v-if="reportType == '测评报告'">
+      <ul v-if="isScaleReport">
         <li class="roof">
           <div class="w200" style="text-align: center">测评用户</div>
           <div class="w200">所在部门</div>
@@ -132,7 +132,7 @@
         @current-change="changePage"
       >
       </el-pagination>
-      <button class="wye" @click="changePage(Math.ceil(reportList.total / reportList.page_size))">尾页</button>
+      <button class="wye" @click="changePage(maxPage)">尾页</button>
     </div>
 
     <print ref="print" :reportData="infoData" :type="reportType" :chartImg="chartImg" />
@@ -159,13 +159,91 @@ import * as echarts from "echarts"
 import { deptApiList } from "@/server/api/dept"
 import { exportWord } from "@/utils/export"
 import { getSmileAssessList, deleteSmileAssess, getSmileAssessDetail } from "@/server/api/detection"
+import { normalizeDetectionSection, toTextList } from "@/utils/detectionReport"
+
+const REPORT_TYPES = {
+  SCALE: "测评报告",
+  TRAINING: "心理训练",
+  DETECTION: "检测报告",
+}
+
+const REPORT_CONFIG = {
+  [REPORT_TYPES.SCALE]: {
+    listApi: frontGaugeReportApiList,
+    infoApi: frontGaugeReportApiInfo,
+    deleteApi: frontGaugeReportApiDel,
+    detailPath: "/report/details",
+    template: "/docxTemplate/测评报告.docx",
+    isScale: true,
+    listParams(vm) {
+      return {
+        class_id: vm.depId,
+        page: vm.reportList.page,
+        page_size: vm.reportList.page_size,
+        title: vm.searchName,
+      }
+    },
+    normalizeList(data) {
+      return {
+        list: data.data.list,
+        total: data.data.total,
+      }
+    },
+  },
+  [REPORT_TYPES.TRAINING]: {
+    listApi: reportApiList,
+    infoApi: reportApiInfo,
+    deleteApi: reportApiDel,
+    detailPath: "/report/details",
+    template: "/docxTemplate/训练报告.docx",
+    isScale: true,
+    listParams(vm) {
+      return {
+        page: vm.reportList.page,
+        page_size: vm.reportList.page_size,
+        title: vm.searchName,
+        class_id: vm.depId,
+        cat_name: vm.reportType,
+      }
+    },
+    normalizeList(data) {
+      return {
+        list: data.data,
+        total: data.total,
+      }
+    },
+  },
+  [REPORT_TYPES.DETECTION]: {
+    listApi: getSmileAssessList,
+    infoApi: getSmileAssessDetail,
+    deleteApi: deleteSmileAssess,
+    detailPath: "/report/emotionReport",
+    template: "/docxTemplate/检测报告.docx",
+    isScale: false,
+    listParams(vm) {
+      return {
+        page: vm.reportList.page,
+        page_size: vm.reportList.page_size,
+        title: vm.searchName,
+        class_id: vm.depId,
+      }
+    },
+    normalizeList(data) {
+      return {
+        list: data.data.data,
+        total: data.data.total,
+      }
+    },
+  },
+}
+
 export default {
   components: { Print, EmotionPrint },
   data() {
     return {
       reportList: { list: [], page: 1, total: 0, page_size: 6 },
-      reportType: "测评报告",
-      options: [{ value: "测评报告" }, { value: "心理训练" }, { value: "检测报告" }],
+      reportType: REPORT_TYPES.SCALE,
+      options: Object.values(REPORT_TYPES).map((value) => ({ value })),
       depList: [],
       depId: "",
       searchName: "",
@@ -176,33 +254,32 @@ export default {
       emotionChartImg1: "",
       emotionChartImg2: "",
       Ls_firstComplete: false,
-      emotionIndicators: [
-        { name: "悲伤", max: 100 },
-        { name: "愤怒", max: 100 },
-        { name: "恐惧", max: 100 },
-        { name: "快乐", max: 100 },
-        { name: "惊讶", max: 100 },
-      ],
-      barColors: ["#18c8ff", "#ffee00", "#18d27c", "#18c8ff", "#ffee00", "#18c8ff", "#5d5dff"],
     }
   },
+  computed: {
+    currentReportConfig() {
+      return REPORT_CONFIG[this.reportType]
+    },
+    isScaleReport() {
+      return this.reportType === REPORT_TYPES.SCALE
+    },
+    isDetectionReport() {
+      return this.reportType === REPORT_TYPES.DETECTION
+    },
+    maxPage() {
+      return Math.max(Math.ceil(this.reportList.total / this.reportList.page_size), 1)
+    },
+  },
   watch: {
-    reportType(newv) {
+    reportType() {
       this.reportList.page = 1
       this.detailsId = ""
-      if (newv == "测评报告") {
-        this.getScaleReport()
-      } else if (newv == "心理训练") {
-        this.getReportList()
-      } else if (newv == "检测报告") {
-        this.getDetectionReport()
-      }
+      this.loadReportList()
     },
   },
   created() {
     this.searchBtn()
     this.getdep()
-    // this.getDetectionReport()
   },
 
   methods: {
@@ -215,68 +292,19 @@ export default {
     selectChange(e) {
       this.depId = e
     },
-    async getScaleReport(page) {
-      try {
-        if (page) {
-          this.reportList.page = page
-        }
-        this.listLoading = true
-        const { data } = await frontGaugeReportApiList({
-          class_id: this.depId,
-          page: this.reportList.page,
-          page_size: this.reportList.page_size,
-          title: this.searchName,
-        })
-        if (data.code == this.$global.successCode) {
-          console.log(data.data)
-          this.reportList.list = data.data.list
-          this.reportList.total = data.data.total
-        }
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.listLoading = false
-      }
-    },
-    async getReportList(page) {
+    async loadReportList(page) {
       if (page) {
         this.reportList.page = page
       }
+      const config = this.currentReportConfig
+      if (!config) return
       this.listLoading = true
       try {
-        const { data } = await reportApiList({
-          page: this.reportList.page,
-          page_size: this.reportList.page_size,
-          title: this.searchName,
-          class_id: this.depId,
-          cat_name: this.reportType,
-        })
+        const { data } = await config.listApi(config.listParams(this))
         if (data.code == this.$global.successCode) {
-          this.reportList.list = data.data
-          this.reportList.total = data.total
-        }
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.listLoading = false
-      }
-    },
-    async getDetectionReport(page) {
-      if (page) {
-        this.reportList.page = page
-      }
-      this.listLoading = true
-      try {
-        const { data } = await getSmileAssessList({
-          page: this.reportList.page,
-          page_size: this.reportList.page_size,
-          title: this.searchName,
-          class_id: this.depId,
-        })
-        if (data.code == this.$global.successCode) {
-          console.log(data)
-          this.reportList.list = data.data.data
-          this.reportList.total = data.data.total
+          const { list, total } = config.normalizeList(data)
+          this.reportList.list = list
+          this.reportList.total = total
         }
       } catch (error) {
         console.error(error)
@@ -286,13 +314,7 @@ export default {
     },
     searchBtn() {
       this.reportList.page = 1
-      if (this.reportType == "测评报告") {
-        this.getScaleReport()
-      } else if (this.reportType == "心理训练") {
-        this.getReportList()
-      } else if (this.reportType == "检测报告") {
-        this.getDetectionReport()
-      }
+      this.loadReportList()
     },
     reset() {
       this.searchName = ""
@@ -301,11 +323,7 @@ export default {
       this.searchBtn()
     },
     changePage(page) {
-      this.reportType === "测评报告"
-        ? this.getScaleReport(page)
-        : this.reportType === "心理训练"
-        ? this.getReportList(page)
-        : this.getDetectionReport(page)
+      this.loadReportList(page)
     },
     lookFn() {
       if (!this.detailsId) {
@@ -314,7 +332,7 @@ export default {
           message: "请选择一条数据查看!",
         })
       }
-      const path = this.reportType === "检测报告" ? "/report/emotionReport" : "/report/details"
+      const path = this.currentReportConfig.detailPath
       this.$router.push({
         path,
         query: { id: this.detailsId, type: this.reportType },
@@ -329,32 +347,20 @@ export default {
             this.$myMessage({ type: "font-error", message: "请选择一条报告!" })
             return
           }
-          const deleteApi =
-            this.reportType === "测评报告"
-              ? frontGaugeReportApiDel
-              : this.reportType === "检测报告"
-              ? deleteSmileAssess
-              : reportApiDel
-          const getList =
-            this.reportType === "测评报告"
-              ? this.getScaleReport
-              : this.reportType === "检测报告"
-              ? this.getDetectionReport
-              : this.getReportList
-
-          await deleteApi({ ids: this.detailsId }).then(() => {
+          await this.currentReportConfig.deleteApi({ ids: this.detailsId }).then(() => {
             this.$myMessage({ type: "font-success", message: "删除成功!" })
             this.detailsId = ""
             const needPrevPage = this.reportList.total !== 1 && this.reportList.list.length === 1
-            getList(needPrevPage ? this.reportList.page - 1 : undefined)
+            this.loadReportList(needPrevPage ? Math.max(this.reportList.page - 1, 1) : undefined)
           })
         },
       })
     },
 
     async fetchReportInfo() {
-      if (this.reportType === "测评报告") {
-        const { data } = await frontGaugeReportApiInfo({ id: this.detailsId })
+      const config = this.currentReportConfig
+      if (this.reportType === REPORT_TYPES.SCALE) {
+        const { data } = await config.infoApi({ id: this.detailsId })
         if (data.code !== this.$global.successCode) return null
         this.infoData = data.data
         const indicator = []
@@ -365,8 +371,8 @@ export default {
         })
         this.radarMapChartFn(indicator, series)
         return { isScale: true }
-      } else if (this.reportType === "心理训练") {
-        const { data } = await reportApiInfo({ id: this.detailsId })
+      } else if (this.reportType === REPORT_TYPES.TRAINING) {
+        const { data } = await config.infoApi({ id: this.detailsId })
         if (data.code !== this.$global.successCode) return null
         this.infoData = {
           ...data.data,
@@ -376,20 +382,23 @@ export default {
           add_time: data.data.add_time,
         }
         return { isScale: true }
-      } else if (this.reportType === "检测报告") {
-        const { data } = await getSmileAssessDetail({ id: this.detailsId })
+      } else if (this.reportType === REPORT_TYPES.DETECTION) {
+        const { data } = await config.infoApi({ id: this.detailsId })
         if (data.code == this.$global.successCode) {
           this.infoData = data.data
-          this.infoData.image_analysis = this.safeJsonParse(this.infoData.image_analysis)
-          this.infoData.mental_ability = this.safeJsonParse(this.infoData.mental_ability)
-          this.infoData.negative = this.safeJsonParse(this.infoData.negative)
-          this.infoData.positive = this.safeJsonParse(this.infoData.positive)
+          this.infoData.image_analysis = normalizeDetectionSection(this.safeJsonParse(this.infoData.image_analysis))
+          this.infoData.mental_ability = normalizeDetectionSection(this.safeJsonParse(this.infoData.mental_ability))
+          this.infoData.negative = normalizeDetectionSection(this.safeJsonParse(this.infoData.negative))
+          this.infoData.positive = normalizeDetectionSection(this.safeJsonParse(this.infoData.positive))
           this.infoData.comprehensive = this.safeJsonParse(this.infoData.comprehensive)
-          console.log(this.infoData)
           // this.progressValue = this.infoData.image_analysis.value[0] || 0
           this.$nextTick(() => {
-            this.radarMapChartFn(this.infoData.negative.name, this.infoData.negative.value)
-            this.roseChartFn(this.infoData.positive.value)
+            if (this.infoData.negative.name.length) {
+              this.radarMapChartFn(this.infoData.negative.name, this.infoData.negative.value)
+            }
+            if (this.infoData.positive.value.length) {
+              this.roseChartFn(this.infoData.positive.value)
+            }
             this.barGraphChartFn(this.infoData.mental_ability.name, this.infoData.mental_ability.value)
           })
         }
@@ -423,6 +432,7 @@ export default {
       if (!result) return
       this.$nextTick(() => {
         const name = this.infoData.nickname + "的报告详情"
+
         let record_result
         if (this.infoData.record_result) {
           record_result = this.infoData.record_result.map((element) => ({
@@ -430,25 +440,31 @@ export default {
             result: element.result.replace(/<[^>]+>/g, ""),
           }))
         }
-        if (this.infoData.recommend) {
-          this.infoData.recommend = this.infoData.recommend.map((element) => ({
-            text: element,
+        const recommend = this.infoData.recommend
+          ? this.infoData.recommend.map((element) => ({
+              text: element,
+            }))
+          : undefined
+        const fn = (s) => (!s ? "" : s.replace(/<br[ ]*\/>/g, ""))
+        let negative
+        let image_analysis
+
+        if (this.isDetectionReport) {
+          const negativeNames = toTextList(this.infoData.negative.name)
+          const imageAnalysisNames = toTextList(this.infoData.image_analysis.name)
+          negative = negativeNames.map((name, i) => ({
+            name,
+            value: this.infoData.negative.value[i],
+            result: this.infoData.negative.result[i],
+            level: this.infoData.negative.level[i],
+          }))
+          image_analysis = imageAnalysisNames.map((name, i) => ({
+            name,
+            value: this.infoData.image_analysis.value[i],
+            result: this.infoData.image_analysis.result[i],
+            level: this.infoData.image_analysis.level[i],
           }))
         }
-        const fn = (s) => (!s ? "" : s.replace(/<br[ ]*\/>/g, ""))
-
-        let negative = this.infoData.negative.name.map((_, i) => ({
-          name: this.infoData.negative.name[i],
-          value: this.infoData.negative.value[i],
-          result: this.infoData.negative.result[i],
-          level: this.infoData.negative.level[i],
-        }))
-        let image_analysis = this.infoData.image_analysis.name.map((_, i) => ({
-          name: this.infoData.image_analysis.name[i],
-          value: this.infoData.image_analysis.value[i],
-          result: this.infoData.image_analysis.result[i],
-          level: this.infoData.image_analysis.level[i],
-        }))
 
         const docx = {
           name,
@@ -457,29 +473,25 @@ export default {
           remark: fn(this.infoData.remark),
           suggest: fn(this.infoData.suggest),
           record_result,
+          recommend,
           add_time: this.$formatDate(this.infoData.add_time * 1000, "yyyy-MM-dd"),
           total_seconds: this.$formatTime(this.infoData.total_seconds, "HHH:mmm:ss"),
           userType: this.$store.getters.roleInfo.name,
           img: this.chartImg,
           img1: this.emotionChartImg1,
           img2: this.emotionChartImg2,
-          wxzs: this.infoData.image_analysis.value[0],
-          fmzs: this.infoData.image_analysis.value[2],
-          zmzs: this.infoData.image_analysis.value[1],
-          xlzs: this.infoData.image_analysis.value[3],
-          negative,
-          image_analysis,
+          wxzs: this.isDetectionReport ? this.infoData.image_analysis.value[0] : null,
+          fmzs: this.isDetectionReport ? this.infoData.image_analysis.value[2] : null,
+          xlzs: this.isDetectionReport ? this.infoData.image_analysis.value[1] : null,
+          zmzs: this.isDetectionReport ? this.infoData.image_analysis.value[3] : null,
+          negative: this.isDetectionReport ? negative : null,
+          image_analysis: this.isDetectionReport ? image_analysis : null,
         }
-        const template =
-          this.reportType === "测评报告"
-            ? "/docxTemplate/测评报告.docx"
-            : this.reportType === "训练报告"
-            ? "/docxTemplate/训练报告.docx"
-            : "/docxTemplate/检测报告.docx"
+        const template = this.currentReportConfig.template
         const options =
-          this.reportType === "测评报告"
+          this.reportType === REPORT_TYPES.SCALE
             ? { otherSize: { img: [580, 300] } }
-            : this.reportType === "检测报告"
+            : this.isDetectionReport
             ? { otherSize: { img1: [580, 300], img2: [580, 300], img3: [580, 300] } }
             : {}
 
@@ -487,10 +499,7 @@ export default {
       })
     },
     radarMapChartFn(data, series) {
-      let indicator = []
-      data.forEach((item) => {
-        indicator.push({ name: item, max: 100 })
-      })
+      const indicator = toTextList(data).map((item) => ({ name: item, max: 100 }))
       var myChart = echarts.init(document.getElementById("radarMap"))
       let option = {
         backgroundColor: "transparent",
@@ -585,6 +594,8 @@ export default {
     },
     barGraphChartFn(data, series) {
       const myChart = echarts.init(document.getElementById("barGraph"))
+      const xAxisData = Array.isArray(data) ? data : []
+      const seriesData = Array.isArray(series) ? series : []
       let option = {
         animation: false,
         grid: {
@@ -595,7 +606,7 @@ export default {
         },
         xAxis: {
           type: "category",
-          data: data,
+          data: xAxisData,
           axisLine: {
             lineStyle: {
               color: "#3d5a98",
@@ -632,7 +643,7 @@ export default {
           // 背景柱
           {
             type: "bar",
-            data: series,
+            data: new Array(xAxisData.length).fill(100),
             barWidth: 42,
             barGap: "-100%",
             itemStyle: {
@@ -650,12 +661,11 @@ export default {
             symbolMargin: 2,
             symbolSize: [35, 13],
             symbolBoundingData: 100,
-            data: [40, 38, 32, 30, 28, 26, 24],
+            data: seriesData,
             z: 2,
             itemStyle: {
               color: (params) => {
-                const colors = ["#18c8ff", "#ffee00", "#18d27c", "#18c8ff", "#ffee00", "#18c8ff", "#5d5dff"]
-
+                const colors = ["#18c8ff", "#ffee00", "#18d27c", "#18c8ff", "#ffee00", "#18c8ff", "#5d5dff", "#00baff"]
                 return colors[params.dataIndex]
               },
             },
@@ -679,13 +689,7 @@ export default {
   },
   activated() {
     if (this.Ls_firstComplete) {
-      if (this.reportType == "测评报告") {
-        this.getScaleReport()
-      } else if (this.reportType == "心理训练") {
-        this.getReportList()
-      } else if (this.reportType == "情绪检测") {
-        this.getDetectionReport()
-      }
+      this.loadReportList()
     } else {
       this.Ls_firstComplete = true
     }

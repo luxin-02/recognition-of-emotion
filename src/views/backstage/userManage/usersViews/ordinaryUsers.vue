@@ -7,13 +7,7 @@
         <inputVue v-model="searchName" placeholder="搜索关键字"></inputVue>
       </div>
       <div class="search-sex">
-        <selectVue
-          :options="searchSexList"
-          v-model="page.sex"
-          label="name"
-          ItemValue="id"
-          placeholder="性别"
-        >
+        <selectVue :options="searchSexList" v-model="page.sex" label="name" ItemValue="id" placeholder="性别">
         </selectVue>
       </div>
       <div class="search-class">
@@ -26,20 +20,14 @@
         ></cascaderVue>
       </div>
       <div class="search-state">
-        <selectVue
-          :options="searchStateList"
-          v-model="page.state"
-          label="name"
-          ItemValue="id"
-          placeholder="账号状态"
-        >
+        <selectVue :options="searchStateList" v-model="page.state" label="name" ItemValue="id" placeholder="账号状态">
         </selectVue>
       </div>
       <buttonVue
         text="搜索"
         @clickBtn="
           () => {
-            page.nickname = searchName;
+            page.nickname = searchName
           }
         "
       ></buttonVue>
@@ -47,11 +35,7 @@
     </div>
     <!-- 增删改 -->
     <div class="add-del_change">
-      <buttonVue
-        text="新增"
-        v-auth="'normaluserlist/add'"
-        @clickBtn="openAddUser"
-      ></buttonVue>
+      <buttonVue text="新增" v-auth="'normaluserlist/add'" @clickBtn="openAddUser"></buttonVue>
       <buttonVue
         text="导入"
         v-auth="'normaluserlist/import'"
@@ -61,16 +45,8 @@
         @clickBtn="importUser"
       >
       </buttonVue>
-      <buttonVue
-        text="修改"
-        v-auth="'normaluserlist/edit'"
-        @clickBtn="openEditUser"
-      ></buttonVue>
-      <buttonVue
-        text="删除"
-        v-auth="'normaluserlist/del'"
-        @clickBtn="userBackApiMoveRecycle"
-      ></buttonVue>
+      <buttonVue text="修改" v-auth="'normaluserlist/edit'" @clickBtn="openEditUser"></buttonVue>
+      <buttonVue text="删除" v-auth="'normaluserlist/del'" @clickBtn="userBackApiMoveRecycle"></buttonVue>
       <buttonVue
         text="处理申诉"
         v-auth="'normaluserlist/appeal'"
@@ -103,12 +79,7 @@
     <div class="total">当前列表共有数据：{{ page.total }}条</div>
 
     <div class="table" v-loading="tableLoading">
-      <tableVue
-        @currentChange="currentChange"
-        :tableConfig="tableConfig"
-        ref="tableRef"
-        @changeSelect="changeSelect"
-      >
+      <tableVue @currentChange="currentChange" :tableConfig="tableConfig" ref="tableRef" @changeSelect="changeSelect">
         <template v-slot:nickname="row">
           <!-- <img src="@/assets/img/搜索.png" style="width: 0.34rem;height: 0.34rem; border-radius:50%" alt=""> -->
           <div class="nickname_row">
@@ -152,20 +123,10 @@
         <template v-slot:state="row">
           <div
             :style="
-              row.row.state == 1
-                ? { color: '#333' }
-                : row.row.state == 3
-                ? { color: '#F26F61' }
-                : { color: '#F26F61' }
+              row.row.state == 1 ? { color: '#333' } : row.row.state == 3 ? { color: '#F26F61' } : { color: '#F26F61' }
             "
           >
-            {{
-              row.row.state == 1
-                ? "正常"
-                : row.row.state == 3
-                ? "密码申诉"
-                : "账号异常"
-            }}
+            {{ row.row.state == 1 ? "正常" : row.row.state == 3 ? "密码申诉" : "账号异常" }}
           </div>
         </template>
       </tableVue>
@@ -173,11 +134,7 @@
 
     <div class="footer">
       <!-- 全选 -->
-      <checkboxVue
-        class="allSelectBtn"
-        :propsValue="allSelect"
-        @returnValue="allSelect = $event"
-      ></checkboxVue>
+      <checkboxVue class="allSelectBtn" :propsValue="allSelect" @returnValue="allSelect = $event"></checkboxVue>
 
       <div class="text">全选本页</div>
 
@@ -215,42 +172,26 @@
 
           <span>* 密码：</span>
           <div class="paw">
-            <input
-              maxlength="16"
-              type="password"
-              v-model="addAndEditObj.password"
-            />
+            <input maxlength="16" type="password" v-model="addAndEditObj.password" />
             <button @click="addAndEditObj.password = '12345'">默认</button>
           </div>
         </div>
-        <div class="illustrate">
-          说明：账号注册后不允许修改，密码可修改。 默认密码 12345
-        </div>
+        <div class="illustrate">说明：账号注册后不允许修改，密码可修改。 默认密码 12345</div>
         <div class="title">个人资料信息</div>
         <div class="name_age_sex">
           <span>* 姓名：</span>
           <input
-            style="margin-left: 0.2rem; width: 2.10rem"
+            style="margin-left: 0.2rem; width: 2.1rem"
             type="text"
             maxlength="16"
             v-model="addAndEditObj.nickname"
           />
           <span>* 年龄：</span>
-          <input
-            type="number"
-            v-model="addAndEditObj.birthdate"
-            @keydown="onKeydown"
-          />
+          <input type="number" v-model="addAndEditObj.birthdate" @keydown="onKeydown" />
           <span>* 性别：</span>
           <!-- <input type="text" v-model="addAndEditObj.sex" /> -->
           <div class="sex_box">
-            <selectVue
-              :options="searchSexList"
-              v-model="addAndEditObj.sex"
-              label="name"
-              ItemValue="name"
-            >
-            </selectVue>
+            <selectVue :options="searchSexList" v-model="addAndEditObj.sex" label="name" ItemValue="name"> </selectVue>
           </div>
         </div>
         <div class="unit">
@@ -269,12 +210,7 @@
             ></cascaderVue>
           </div>
           <span style="margin-left: 0">* 编号：</span>
-          <input
-            style="width: 1.1rem"
-            maxlength="16"
-            type="text"
-            v-model="addAndEditObj.studentID"
-          />
+          <input style="width: 1.1rem" maxlength="16" type="text" v-model="addAndEditObj.studentID" />
         </div>
         <div class="phone_career">
           <span>电话：</span>
@@ -286,27 +222,14 @@
           <span>住址：</span>
           <textarea v-model="addAndEditObj.location"></textarea>
         </div>
-        <div
-          class="title"
-          v-if="
-            $store.getters['isOpenFingerprint'] || $store.getters['isOpenFace']
-          "
-        >
+        <div class="title" v-if="$store.getters['isOpenFingerprint'] || $store.getters['isOpenFace']">
           其它登录凭证：<span>(设备支持时有此功能)</span>
         </div>
         <div class="face_fingerprint" v-if="$store.getters['isOpenFace']">
           <span>人脸：</span>
 
-          <el-image
-            class="images"
-            :src="addAndEditObj.face_img"
-            alt="请录入人脸"
-          >
-            <div
-              slot="error"
-              class="image-slot"
-              style="box-sizing: border-box; border-radius: 0.05rem"
-            >
+          <el-image class="images" :src="addAndEditObj.face_img" alt="请录入人脸">
+            <div slot="error" class="image-slot" style="box-sizing: border-box; border-radius: 0.05rem">
               <i class="el-icon-picture-outline"></i>
             </div>
           </el-image>
@@ -319,21 +242,14 @@
                     : require('@/assets/img/backstage/assembly/deny.png')
                 "
               />
-              {{
-                addAndEditObj.face
-                  ? " 用户已录入人脸信息，可用于登录。"
-                  : "用户未录入人脸信息，不可用于登录。"
-              }}
+              {{ addAndEditObj.face ? " 用户已录入人脸信息，可用于登录。" : "用户未录入人脸信息，不可用于登录。" }}
             </div>
             <button @click="faceShow = true">
               {{ addAndEditObj.face ? "重新录入" : "录入人脸" }}
             </button>
           </div>
         </div>
-        <div
-          class="face_fingerprint"
-          v-if="$store.getters['isOpenFingerprint']"
-        >
+        <div class="face_fingerprint" v-if="$store.getters['isOpenFingerprint']">
           <span>指纹：</span>
           <div class="fingerprint_img" style="box-sizing: border-box">
             <img
@@ -355,9 +271,7 @@
                 "
               />
               {{
-                addAndEditObj.fingerprint
-                  ? " 用户已录入指纹信息，可用于登录。"
-                  : "用户未录入指纹信息，不可用于登录。"
+                addAndEditObj.fingerprint ? " 用户已录入指纹信息，可用于登录。" : "用户未录入指纹信息，不可用于登录。"
               }}
             </div>
             <button @click="fingerprintShow = true">指纹录入</button>
@@ -366,17 +280,10 @@
       </div>
     </backstage-dialog>
     <!-- 录入人脸 -->
-    <theFaceInput
-      :face.sync="addAndEditObj.face"
-      :faceImg.sync="addAndEditObj.face_img"
-      :show.sync="faceShow"
-    >
+    <theFaceInput :face.sync="addAndEditObj.face" :faceImg.sync="addAndEditObj.face_img" :show.sync="faceShow">
     </theFaceInput>
     <!-- 录入指纹 -->
-    <theFingerPrintInput
-      v-model="addAndEditObj.fingerprint"
-      :show.sync="fingerprintShow"
-    ></theFingerPrintInput>
+    <theFingerPrintInput v-model="addAndEditObj.fingerprint" :show.sync="fingerprintShow"></theFingerPrintInput>
     <!-- 密码申诉 -->
     <backstage-dialog
       :isCloseCancel="false"
@@ -394,9 +301,7 @@
         <div class="user_account">
           <div>
             <span>用户账号：</span>
-            <span style="margin-left: 0.29rem">{{
-              activeAppealUser.username
-            }}</span>
+            <span style="margin-left: 0.29rem">{{ activeAppealUser.username }}</span>
           </div>
           <div>
             <img src="@/assets/img/backstage/assembly/appeal2.png" alt="" />
@@ -437,21 +342,11 @@
       <div class="content_box">
         <span>用户模版：</span>
         <div class="download_template">
-          <a :href="$ip + '/static/backend/auto_user_layout2.xlsx'"
-            >2025年用户模版.xls</a
-          >
-          <a
-            class="error"
-            :href="$ip + exportUserErrorPath"
-            v-if="exportUserErrorPath"
-            >点击下载错误原因
-          </a>
+          <a :href="$ip + '/static/backend/auto_user_layout2.xlsx'">用户模版.xls</a>
+          <a class="error" :href="$ip + exportUserErrorPath" v-if="exportUserErrorPath">点击下载错误原因 </a>
           <button>
             <a :href="$ip + '/static/backend/auto_user_layout2.xlsx'"></a>
-            <img
-              src="@/assets/img/backstage/assembly/importDownload.png"
-              alt=""
-            />
+            <img src="@/assets/img/backstage/assembly/importDownload.png" alt="" />
             下载
           </button>
         </div>
@@ -475,19 +370,14 @@
       </div>
     </backstage-dialog>
 
-    <userDangan
-      ref="userDangan"
-      :userId="activeRow"
-      :DanganShow.sync="DanganShow"
-      v-if="DanganShow"
-    ></userDangan>
+    <userDangan ref="userDangan" :userId="activeRow" :DanganShow.sync="DanganShow" v-if="DanganShow"></userDangan>
   </div>
 </template>
 
 <script>
-import { deptApiList } from "@/server/api/dept";
-import { fileApiExcel } from "@/server/api/file";
-import { trimStringProperties, copyNonEmptyProperties } from "@/utils/object";
+import { deptApiList } from "@/server/api/dept"
+import { fileApiExcel } from "@/server/api/file"
+import { trimStringProperties, copyNonEmptyProperties } from "@/utils/object"
 import {
   userBackApiList,
   userBackApiResetPassword,
@@ -497,33 +387,33 @@ import {
   userNormalerBackApiEdit,
   userBackApiComplaints,
   userBackApiImport,
-} from "@/server/api/user";
-import theFaceInput from "../components/theFaceInput.vue";
-import theFingerPrintInput from "../components/theFingerPrintInput.vue";
-import userDangan from "../theUserProfile/index.vue";
+} from "@/server/api/user"
+import theFaceInput from "../components/theFaceInput.vue"
+import theFingerPrintInput from "../components/theFingerPrintInput.vue"
+import userDangan from "../theUserProfile/index.vue"
 
 function convertAgeToDate(age) {
-  let currentDate = new Date(); // 获取当前日期
-  let year = currentDate.getFullYear() - age; // 减去年龄得到出生年份
+  let currentDate = new Date() // 获取当前日期
+  let year = currentDate.getFullYear() - age // 减去年龄得到出生年份
   // var month = currentDate.getMonth() + 1; // 获取当前月份
   // var day = currentDate.getDate(); // 获取当前日期
 
   // 格式化日期字符串
-  let formattedDate = year + "-" + "01" + "-" + "01";
+  let formattedDate = year + "-" + "01" + "-" + "01"
 
-  return formattedDate;
+  return formattedDate
 }
 
 export default {
   components: { theFaceInput, theFingerPrintInput, userDangan },
   async created() {
-    const deptRes = await deptApiList();
+    const deptRes = await deptApiList()
     if (deptRes.data.code == 200) {
-      deptRes.data.data[0].disabled = true;
-      this.deptList = deptRes.data.data[0].children;
+      deptRes.data.data[0].disabled = true
+      this.deptList = deptRes.data.data[0].children
     }
 
-    this.getTableList();
+    this.getTableList()
   },
   data() {
     return {
@@ -610,10 +500,8 @@ export default {
             label: "序号",
             type: "function",
             callback: (row) => {
-              let page = this.page.page;
-              return (
-                row.index + 1 + page * this.page.page_size - this.page.page_size
-              );
+              let page = this.page.page
+              return row.index + 1 + page * this.page.page_size - this.page.page_size
             },
             width: 80,
           },
@@ -677,144 +565,137 @@ export default {
       // 是否全选
       allSelect: false,
       tableLoading: false,
-    };
+    }
   },
   computed: {
     //组合属性用于监听搜索参数自动查询
     combinedProperties() {
-      return (
-        this.page.sex +
-        this.page.class_id +
-        this.page.state +
-        this.page.nickname
-      );
+      return this.page.sex + this.page.class_id + this.page.state + this.page.nickname
     },
   },
   watch: {
     allSelect(newAllSelect) {
       if (newAllSelect) {
         // 获取表格dom
-        const tableDom = this.$refs.tableRef;
+        const tableDom = this.$refs.tableRef
         // 全选功能
         this.tableConfig.tableData.forEach((item) => {
-          tableDom.$children[0].toggleRowSelection(item, true);
-        });
+          tableDom.$children[0].toggleRowSelection(item, true)
+        })
       } else {
         // 获取表格dom
-        const tableDom = this.$refs.tableRef;
+        const tableDom = this.$refs.tableRef
         // 全选功能
-        tableDom.$children[0].clearSelection();
+        tableDom.$children[0].clearSelection()
       }
     },
     combinedProperties() {
-      this.getTableList();
+      this.getTableList()
     },
   },
   methods: {
     onKeydown(e) {
-      let key = e.key;
+      let key = e.key
       if (key === "+" || key === "-") {
-        e.returnValue = false;
+        e.returnValue = false
       } else {
-        e.returnValue = true;
+        e.returnValue = true
       }
     },
     async changeUpload(file) {
-      this.importProgress = 0;
-      await this.$nextTick();
+      this.importProgress = 0
+      await this.$nextTick()
       await new Promise((resolve) => {
-        setTimeout(resolve, 500);
-      });
+        setTimeout(resolve, 500)
+      })
 
       function isExcelFile(file) {
         // 获取文件名
-        const fileName = file.name;
+        const fileName = file.name
         // 判断文件扩展名是否为 .xlsx 或 .xls
-        const fileExt = fileName.split(".").pop();
-        return fileExt === "xlsx" || fileExt === "xls";
+        const fileExt = fileName.split(".").pop()
+        return fileExt === "xlsx" || fileExt === "xls"
       }
 
-      let flag = isExcelFile(file);
+      let flag = isExcelFile(file)
       if (flag) {
-        this.uploadFile = file;
-        this.importProgress = 100;
+        this.uploadFile = file
+        this.importProgress = 100
       } else {
-        this.uploadFile = "";
-        this.importProgress = 0;
-        this.$message.error("请选择xlsx文件");
+        this.uploadFile = ""
+        this.importProgress = 0
+        this.$message.error("请选择xlsx文件")
       }
     },
     async userBackApiImport() {
       if (!this.uploadFile) {
-        this.$message.error("请选择批量上传模板");
+        this.$message.error("请选择批量上传模板")
       }
 
-      this.uploading = true;
-      this.exportUserErrorPath = "";
+      this.uploading = true
+      this.exportUserErrorPath = ""
 
       try {
-        const fileRes = await fileApiExcel(this.uploadFile);
+        const fileRes = await fileApiExcel(this.uploadFile)
 
         if (fileRes.data.code != 200) {
-          return;
+          return
         }
-        let path = fileRes.data.data;
+        let path = fileRes.data.data
 
-        const res = await userBackApiImport({ file_path: path });
+        const res = await userBackApiImport({ file_path: path })
 
         if (res.data.code == 200) {
           if (res.data.data) {
-            this.$message.success("导入失败");
-            this.exportUserErrorPath = res.data.data;
+            this.$message.success("导入失败")
+            this.exportUserErrorPath = res.data.data
           } else {
             // this.$message.success(res.data.msg);
             this.$message.success({
               message: res.data.msg,
               duration: 3000,
-            });
-            this.importShow = false;
+            })
+            this.importShow = false
 
-            this.getTableList();
+            this.getTableList()
           }
         }
       } catch (error) {
-        console.error(error);
+        console.error(error)
       } finally {
-        this.uploading = false;
+        this.uploading = false
       }
     },
 
     //重置密码
     async userBackApiResetPassword() {
       if (!this.selectIds) {
-        this.$message.error("请勾选需要重置密码的用户！");
-        return;
+        this.$message.error("请勾选需要重置密码的用户！")
+        return
       }
       let flag = await this.$backstagePopup.asyncShow(
-        `正在将选中用户的登录密码重置为默认密码（<span style="color:#2E8AE6">12345</span>），确定要继续吗？`
-      );
+        `正在将选中用户的登录密码重置为默认密码（<span style="color:#2E8AE6">12345</span>），确定要继续吗？`,
+      )
       if (flag) {
-        const res = await userBackApiResetPassword({ uid: this.selectIds });
+        const res = await userBackApiResetPassword({ uid: this.selectIds })
         if (res.data.code == 200) {
-          this.$message.success("重置成功！");
-          this.getTableList();
+          this.$message.success("重置成功！")
+          this.getTableList()
         }
       }
     },
     //删除用户
     async userBackApiMoveRecycle() {
       if (!this.selectIds) {
-        this.$message.error("请勾选需要删除的用户！");
-        return;
+        this.$message.error("请勾选需要删除的用户！")
+        return
       }
-      let flag = await this.$backstagePopup.asyncShow(
-        `是否删除选中的普通用户账号？`
-      );
+      let flag = await this.$backstagePopup.asyncShow(`是否删除选中的普通用户账号？`)
       if (flag) {
-        const res = await userBackApiMoveRecycle({ uid: this.selectIds });
+        const res = await userBackApiMoveRecycle({ uid: this.selectIds })
         if (res.data.code == 200) {
-          this.$message.success("删除成功！");
-          this.getTableList();
+          this.$message.success("删除成功！")
+          this.getTableList()
         }
       }
     },
@@ -823,193 +704,189 @@ export default {
       //锁定保存操作
 
       try {
-        this.isSaveLoading = true;
+        this.isSaveLoading = true
 
         if (this.addAndEditType == 0) {
-          await this.saveAddUser();
+          await this.saveAddUser()
         } else {
-          await this.saveEditUser();
+          await this.saveEditUser()
         }
       } catch (error) {
-        console.error(error);
+        console.error(error)
         //解锁
-        this.isSaveLoading = false;
+        this.isSaveLoading = false
       }
 
       //解锁
-      this.isSaveLoading = false;
+      this.isSaveLoading = false
     },
     //保存创建用户
     async saveAddUser() {
-      let params = { ...this.addAndEditObj };
+      let params = { ...this.addAndEditObj }
       //判断class_id是否是数组 如果是数组的话取最后一个的值
       if (Array.isArray(params.class_id) && params.class_id.length > 0) {
-        params.class_id = params.class_id[params.class_id.length - 1];
+        params.class_id = params.class_id[params.class_id.length - 1]
       }
       //判断fingerprint是否是数组 如果是数组的话取最后一个的值
       if (Array.isArray(params.fingerprint) && params.fingerprint.length > 0) {
-        params.fingerprint = params.fingerprint[params.fingerprint.length - 1];
+        params.fingerprint = params.fingerprint[params.fingerprint.length - 1]
       }
 
       //去掉字符串左右空格
-      params = trimStringProperties(params);
+      params = trimStringProperties(params)
 
       //验证新增用户数据是否正常
       const validity = (params) => {
         if (params.username == "") {
-          this.$message.error("请输入账号！");
-          return false;
+          this.$message.error("请输入账号！")
+          return false
         }
         if (params.password == "") {
-          this.$message.error("请输入密码！");
-          return false;
+          this.$message.error("请输入密码！")
+          return false
         }
         if (params.nickname == "") {
-          this.$message.error("请输入姓名！");
-          return false;
+          this.$message.error("请输入姓名！")
+          return false
         }
         if (params.sex == "" || (params.sex != "男" && params.sex != "女")) {
-          this.$message.error("请输入正确的性别！");
-          return false;
+          this.$message.error("请输入正确的性别！")
+          return false
         }
 
         if (params.birthdate < 0) {
-          this.$message.error("请输入正确的年龄！");
-          return false;
+          this.$message.error("请输入正确的年龄！")
+          return false
         }
 
         if (params.class_id == "") {
-          this.$message.error("请选择所在部门/班级");
-          return false;
+          this.$message.error("请选择所在部门/班级")
+          return false
         }
 
         if (params.studentID == "") {
-          this.$message.error("请输入编号");
-          return false;
+          this.$message.error("请输入编号")
+          return false
         }
 
-        return true;
-      };
+        return true
+      }
 
-      let flag = validity(params);
+      let flag = validity(params)
 
       if (!flag) {
-        return;
+        return
       }
       //将年龄转成出生日期
-      params.date_of_birth = this.$getTime(
-        convertAgeToDate(parseInt(params.birthdate))
-      );
+      params.date_of_birth = this.$getTime(convertAgeToDate(parseInt(params.birthdate)))
 
-      const res = await userNormalerBackApiAdd(params);
+      const res = await userNormalerBackApiAdd(params)
       if (res.data.code == 200) {
-        this.addAndEditShow = false;
-        this.$message.success("新增成功");
+        this.addAndEditShow = false
+        this.$message.success("新增成功")
         //刷新数据
-        this.getTableList();
+        this.getTableList()
       }
     },
     //保存修改用户
     async saveEditUser() {
-      let params = { ...this.addAndEditObj };
+      let params = { ...this.addAndEditObj }
       //判断class_id是否是数组 如果是数组的话取最后一个的值
       if (Array.isArray(params.class_id) && params.class_id.length > 0) {
-        params.class_id = params.class_id[params.class_id.length - 1];
+        params.class_id = params.class_id[params.class_id.length - 1]
       }
       //判断fingerprint是否是数组 如果是数组的话取最后一个的值
       if (Array.isArray(params.fingerprint) && params.fingerprint.length > 0) {
-        params.fingerprint = params.fingerprint[params.fingerprint.length - 1];
+        params.fingerprint = params.fingerprint[params.fingerprint.length - 1]
       }
 
       //去掉字符串左右空格
-      params = trimStringProperties(params);
+      params = trimStringProperties(params)
 
       //验证用户数据是否正常
       const validity = (params) => {
         if (params.username == "") {
-          this.$message.error("请输入账号！");
-          return false;
+          this.$message.error("请输入账号！")
+          return false
         }
 
         if (params.nickname == "") {
-          this.$message.error("请输入姓名！");
-          return false;
+          this.$message.error("请输入姓名！")
+          return false
         }
         if (params.sex == "" || (params.sex != "男" && params.sex != "女")) {
-          this.$message.error("请输入正确的性别！");
-          return false;
+          this.$message.error("请输入正确的性别！")
+          return false
         }
 
         if (params.birthdate < 0) {
-          this.$message.error("请输入正确的年龄！");
-          return false;
+          this.$message.error("请输入正确的年龄！")
+          return false
         }
 
         if (params.class_id == "") {
-          this.$message.error("请选择所在部门/班级");
-          return false;
+          this.$message.error("请选择所在部门/班级")
+          return false
         }
 
         if (params.studentID == "") {
-          this.$message.error("请输入编号");
-          return false;
+          this.$message.error("请输入编号")
+          return false
         }
 
-        return true;
-      };
-
-      let flag = validity(params);
-
-      if (!flag) {
-        return;
+        return true
       }
 
-      params.date_of_birth = this.$getTime(
-        convertAgeToDate(parseInt(params.birthdate))
-      );
+      let flag = validity(params)
 
-      const res = await userNormalerBackApiEdit(params);
+      if (!flag) {
+        return
+      }
+
+      params.date_of_birth = this.$getTime(convertAgeToDate(parseInt(params.birthdate)))
+
+      const res = await userNormalerBackApiEdit(params)
 
       if (res.data.code == 200) {
-        this.addAndEditShow = false;
-        this.$message.success("修改成功");
+        this.addAndEditShow = false
+        this.$message.success("修改成功")
         //刷新数据
-        this.getTableList();
+        this.getTableList()
       }
     },
 
     async getTableList(page) {
       if (page) {
-        this.page.page = page;
+        this.page.page = page
       }
       const params = {
         ...this.page,
         role: this.role,
-      };
+      }
       //判断class_id是否是数组 如果是数组的话取最后一个的值
       if (Array.isArray(params.class_id) && params.class_id.length > 0) {
-        params.class_id = params.class_id[params.class_id.length - 1];
+        params.class_id = params.class_id[params.class_id.length - 1]
       }
-      this.tableConfig.tableData = [];
-      this.tableLoading = true;
+      this.tableConfig.tableData = []
+      this.tableLoading = true
       try {
-        const res = await userBackApiList(params);
+        const res = await userBackApiList(params)
         if (res.data.code == 200) {
-          this.page.page = res.data.data.current_page;
-          this.page.total = res.data.data.total;
-          this.tableConfig.tableData = res.data.data.data;
+          this.page.page = res.data.data.current_page
+          this.page.total = res.data.data.total
+          this.tableConfig.tableData = res.data.data.data
         }
       } catch (error) {
-        console.log(error);
+        console.log(error)
       } finally {
-        this.tableLoading = false;
+        this.tableLoading = false
       }
     },
     currentChange(row) {
-      this.activeRow = row;
+      this.activeRow = row
     },
     openAddUser() {
-      this.addAndEditType = 0;
+      this.addAndEditType = 0
       this.addAndEditObj = {
         username: "",
         password: "",
@@ -1025,15 +902,15 @@ export default {
         face_img: "",
         fingerprint: "", //指纹
         face: "",
-      };
-      this.addAndEditShow = true;
+      }
+      this.addAndEditShow = true
     },
 
     //修改
     async openEditUser() {
       if (!this.activeRow) {
-        this.$message.error("请选择需要修改的行！");
-        return;
+        this.$message.error("请选择需要修改的行！")
+        return
       }
 
       let addAndEditObj = {
@@ -1051,79 +928,74 @@ export default {
         face_img: "",
         fingerprint: "", //指纹
         face: "",
-      };
+      }
 
-      const res = await userBackApiDetails({ uid: this.activeRow.id });
+      const res = await userBackApiDetails({ uid: this.activeRow.id })
       if (res.data.code == 200) {
-        addAndEditObj = copyNonEmptyProperties(addAndEditObj, res.data.data);
-        let object = res.data.data;
-        addAndEditObj.password = "";
-        addAndEditObj.uid = this.activeRow.id;
+        addAndEditObj = copyNonEmptyProperties(addAndEditObj, res.data.data)
+        let object = res.data.data
+        addAndEditObj.password = ""
+        addAndEditObj.uid = this.activeRow.id
         //部门数组赋值包括其父亲
 
-        let classid = res.data.data.depts.length
-          ? res.data.data.depts[0].id
-          : "";
-        let parent = this.findParentNodes(
-          (node) => node.id == classid,
-          this.deptList[0]
-        ).map((v) => v.id);
-        parent.push(classid);
-        addAndEditObj.class_id = parent;
-        this.addAndEditObj = addAndEditObj;
+        let classid = res.data.data.depts.length ? res.data.data.depts[0].id : ""
+        let parent = this.findParentNodes((node) => node.id == classid, this.deptList[0]).map((v) => v.id)
+        parent.push(classid)
+        addAndEditObj.class_id = parent
+        this.addAndEditObj = addAndEditObj
 
-        this.addAndEditType = 1;
-        this.addAndEditShow = true;
+        this.addAndEditType = 1
+        this.addAndEditShow = true
       }
     },
 
     // 导入
     importUser() {
-      this.uploading = false;
-      this.importProgress = 0;
-      this.uploadFile = false;
-      this.importShow = true;
-      this.exportUserErrorPath = "";
+      this.uploading = false
+      this.importProgress = 0
+      this.uploadFile = false
+      this.importShow = true
+      this.exportUserErrorPath = ""
     },
 
     //申诉
     async openAppeal() {
       if (!this.activeRow) {
-        this.$message.error("请选择需要处理的用户！");
-        return;
+        this.$message.error("请选择需要处理的用户！")
+        return
       }
 
       if (this.activeRow.state != 3) {
-        this.$message.error("该用户不属于申诉状态！");
-        return;
+        this.$message.error("该用户不属于申诉状态！")
+        return
       }
 
-      let uid = this.activeRow.id;
+      let uid = this.activeRow.id
 
-      const res = await userBackApiComplaints({ uid });
+      const res = await userBackApiComplaints({ uid })
 
       if (res.data.code == 200) {
-        this.appealShow = true;
-        this.activeAppealUser = res.data.data;
-        this.activeAppealUser.class_name = this.activeRow.class_name;
+        this.appealShow = true
+        this.activeAppealUser = res.data.data
+        this.activeAppealUser.class_name = this.activeRow.class_name
       }
     },
     //是否同意
     async optionsAppeal(flag) {
-      let uid = this.activeRow.id;
+      let uid = this.activeRow.id
 
-      const res = await userBackApiComplaints({ uid, opinion: flag ? 1 : 2 });
+      const res = await userBackApiComplaints({ uid, opinion: flag ? 1 : 2 })
       if (res.data.code == 200) {
-        this.$message.success("处理成功！");
-        this.getTableList();
-        return;
+        this.$message.success("处理成功！")
+        this.getTableList()
+        return
       }
     },
 
     cancel() {},
 
     reset() {
-      this.searchName = "";
+      this.searchName = ""
       this.page = {
         // 当前分页
         page: 1,
@@ -1135,29 +1007,29 @@ export default {
         class_id: "",
         sex: "",
         state: "",
-      };
+      }
     },
 
     // 选择项发生改变时
     changeSelect(changeValue) {
-      console.log(changeValue);
-      let strArr = [];
+      console.log(changeValue)
+      let strArr = []
       if (changeValue.length !== 0) {
         for (let i = 0; i < changeValue.length; i++) {
-          strArr.push(changeValue[i].id);
+          strArr.push(changeValue[i].id)
         }
       }
-      this.selectCount = changeValue.length;
+      this.selectCount = changeValue.length
       if (changeValue.length == 0) {
-        this.allSelect = false;
+        this.allSelect = false
       } else if (changeValue.length == this.tableConfig.tableData.length) {
-        this.allSelect = true;
+        this.allSelect = true
       }
-      this.selectIds = strArr.join(",");
+      this.selectIds = strArr.join(",")
     },
     // 清空已选择项
     clearSelect() {
-      this.allSelect = !this.allSelect;
+      this.allSelect = !this.allSelect
       /* if (!this.allSelect) {
         //获取表格dom;
         const tableDom = this.$refs.tableRef;
@@ -1173,36 +1045,36 @@ export default {
      * @returns
      */
     findParentNodes(compare, tree) {
-      let path = [];
+      let path = []
 
       function findPath(currentNode, currentPath) {
         if (compare ? compare(currentNode) : false) {
-          path = currentPath.slice();
-          return;
+          path = currentPath.slice()
+          return
         }
 
         if (currentNode.children) {
           for (let i = 0; i < currentNode.children.length; i++) {
-            const child = currentNode.children[i];
-            findPath(child, [...currentPath, currentNode]);
+            const child = currentNode.children[i]
+            findPath(child, [...currentPath, currentNode])
           }
         }
       }
 
-      findPath(tree, []);
-      return path;
+      findPath(tree, [])
+      return path
     },
 
     toDangan() {
       if (!this.activeRow) {
-        this.$message.error("请选择用户！");
-        return;
+        this.$message.error("请选择用户！")
+        return
       }
-      this.DanganShow = true;
+      this.DanganShow = true
       // this.$router.push({ path: "/dangan", query: { id: this.activeRow.id } });
     },
   },
-};
+}
 </script>
 <style lang="less" scoped>
 .ordinaryUsers {

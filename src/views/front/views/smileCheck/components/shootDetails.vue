@@ -106,13 +106,15 @@ export default {
     },
 
     async getDetails() {
-      if (this.detailsId) {
-        const { data } = await smileClockDetail({
-          id: this.detailsId,
-        })
-        if (data.code == this.$global.successCode) {
-          this.detailData = data.data
-        }
+      if (this.detailsId === undefined || this.detailsId === null || this.detailsId === "") {
+        this.cancel()
+        return
+      }
+      const { data } = await smileClockDetail({
+        id: this.detailsId,
+      })
+      if (data.code == this.$global.successCode) {
+        this.detailData = data.data
       }
     },
     async handleLike() {
@@ -163,6 +165,10 @@ export default {
   },
   watch: {
     show(newV) {
+      if (newV && (this.detailsId === undefined || this.detailsId === null || this.detailsId === "")) {
+        this.cancel()
+        return
+      }
       this.isShow = newV
       if (!newV) {
         this.detailData = null

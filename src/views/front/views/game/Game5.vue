@@ -12,9 +12,7 @@
       </div>
       <div v-else class="step2">
         <div class="top">
-          <div>
-            不同点：{{ foundArr.length }}/{{ list[curIndex].differ.length }}
-          </div>
+          <div>不同点：{{ foundArr.length }}/{{ list[curIndex].differ.length }}</div>
           <div>用时：{{ time }} 秒</div>
         </div>
         <div class="body">
@@ -56,7 +54,7 @@
     <div class="open" v-if="isVisible">
       <div>
         <p>恭喜通关</p>
-        <div v-html="strText"></div>
+        <div v-html="strText" style="text-align: center;"></div>
       </div>
     </div>
   </div>
@@ -137,6 +135,12 @@ export default {
               height: "1.10rem",
               top: "3.40rem",
               left: "4.37rem",
+            },
+            {
+              width: "0.2rem",
+              height: "0.2rem",
+              top: "4.6rem",
+              left: "2.06rem",
             },
           ],
         },
@@ -549,8 +553,9 @@ export default {
       this.curIndex = 0
       this.clearTimer()
       this.countTime()
-      this.randomSort(this.orign)
-      this.list = this.orign
+      const list = this.orign.slice()
+      this.randomSort(list)
+      this.list = list.slice(0, 3)
     },
   },
   beforeCreate() {},

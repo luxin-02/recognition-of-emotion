@@ -47,7 +47,7 @@
     <div class="open" v-if="isVisible">
       <div>
         <p>{{ isOver ? "恭喜通关" : "游戏结束" }}</p>
-        <div v-html="strText"></div>
+        <div v-html="strText" style="text-align: center;"></div>
       </div>
     </div>
   </div>

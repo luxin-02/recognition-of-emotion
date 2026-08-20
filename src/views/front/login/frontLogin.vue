@@ -34,35 +34,19 @@
         </div>
         <div class="text" @click="autoLogin = !autoLogin">记住密码</div>
 
-        <div class="retrieve_pwd" @click="$toUrl('retrievePassword')">
-          忘记密码
-        </div>
+        <div class="retrieve_pwd" @click="$toUrl('retrievePassword')">忘记密码</div>
         <!-- <div class="retrieve_pwd" @click="$toUrl('register')">注册账号</div> -->
       </div>
 
-      <div
-        class="loginBtn"
-        @click="login"
-        v-loading="loading.login"
-        element-loading-background="rgba(0, 0, 0, 0.5)"
-      >
+      <div class="loginBtn" @click="login" v-loading="loading.login" element-loading-background="rgba(0, 0, 0, 0.5)">
         登录
       </div>
       <div class="login_type">
-        <span @click="$toUrl('faceLogin')" v-if="$store.getters.isOpenFace">
-          人脸登录
-        </span>
+        <span @click="$toUrl('faceLogin')" v-if="$store.getters.isOpenFace"> 人脸登录 </span>
+        <i v-if="$store.getters.isOpenFace"></i>
+        <span @click="$toUrl('fingerprintLogin')" v-if="$store.getters.isOpenFingerprint"> 指纹登录 </span>
         <i v-if="$store.getters.isOpenFingerprint"></i>
-        <span
-          @click="$toUrl('fingerprintLogin')"
-          v-if="$store.getters.isOpenFingerprint"
-        >
-          指纹登录
-        </span>
-        <i v-if="$store.getters.isOpenGuest"></i>
-        <span @click="guestLogin" v-if="$store.getters.isOpenGuest">
-          游客登录
-        </span>
+        <span @click="guestLogin" v-if="$store.getters.isOpenGuest"> 游客登录 </span>
         <i v-if="$store.getters.isOpenGuest"></i>
         <span @click="$toUrl('register')"> 注册账号 </span>
       </div>
@@ -77,11 +61,7 @@
       src="@/assets/img/front/index/chuangyuCopyrightLogo.png"
     /> -->
 
-    <LoginWindow
-      v-if="showAdmin"
-      :userRouter="{ name: 'Home' }"
-      :adminRouter="'/index'"
-    ></LoginWindow>
+    <LoginWindow v-if="showAdmin" :userRouter="{ name: 'Home' }" :adminRouter="'/index'"></LoginWindow>
   </div>
 </template>
 

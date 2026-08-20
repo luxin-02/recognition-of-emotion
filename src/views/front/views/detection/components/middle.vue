@@ -412,6 +412,7 @@ export default {
         ZMrightBottom: this.toTrendData(panelState.rightBottomData.positiveData),
         FMrightBottom: this.toTrendData(panelState.rightBottomData.negativeData),
         XLrightBottom: this.toTrendData(panelState.rightBottomData.psychologyData),
+        analysisData: this.analysisData,
       }
     },
     createZeroDetectionPayload() {
@@ -423,6 +424,12 @@ export default {
         ZMrightBottom: Array(TREND_SIZE).fill(0),
         FMrightBottom: Array(TREND_SIZE).fill(0),
         XLrightBottom: Array(TREND_SIZE).fill(0),
+        analysisData: {
+          smileIndex: this.analysisData?.smileIndex || 0,
+          positiveEmotion: this.analysisData?.positiveEmotion || 0,
+          negativeEmotion: this.analysisData?.negativeEmotion || 0,
+          mentalAbility: this.analysisData?.mentalAbility || 0,
+        },
       }
     },
     toTrendData(data) {

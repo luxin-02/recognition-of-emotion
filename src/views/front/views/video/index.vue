@@ -68,13 +68,14 @@
       <div class="pop" @mouseup="end">
         <div class="video">
           <video
-            :src="$ip + currObj.video_url"
+            v-if="currObj.video_url"
+            :src="getFileUrl(currObj.video_url)"
             ref="video"
             @canplay="canplay"
             @timeupdate="timeupdateFoo"
             @ended="videoEnded"
             preload="auto"
-            :poster="$ip + currObj.img_url"
+            :poster="getFileUrl(currObj.img_url)"
             disablePictureInPicture
             oncontextmenu="return false"
             controlslist="nodownload noremoteplayback disablePictureInPicture noplaybackrate"
@@ -181,9 +182,9 @@ export default {
   data() {
     return {
       isShow: false,
-      isVolume: false, //是否显示音量弹框
-      dragging: false, //是否拖动音量
-      isChange: false, //是否正在被拖动
+      isVolume: false, // 是否显示音量面板
+      dragging: false, // 是否正在拖动音量
+      isChange: false, // 是否正在拖动播放进度
       videoProgress: 0,
       volumeProgress: 0,
       page: {
@@ -194,28 +195,23 @@ export default {
         title: "",
       },
       list: [],
-      videoClass: [], //分类列表
+      videoClass: [], // 视频分类列表
       playAndPause: false,
-      idx: 0,
       currObj: {},
-      isFull: false,
       listLoading: false,
     }
   },
-  components: {},
-  computed: {},
   watch: {
     isShow(val) {
       if (!val) {
-        this.videoProgress = 0
-        this.currObj = {}
-        this.$forceUpdate()
+        this.resetVideo()
       }
     },
   },
   methods: {
     clickFull() {
-      let video = this.$refs.video
+      const video = this.$refs.video
+      if (!video) return
       if (!document.fullscreenElement) {
         video.requestFullscreen().catch((err) => {
           console.error(err.message)
@@ -227,28 +223,40 @@ export default {
       }
     },
     clickVideo(i) {
-      this.isShow = true
       this.isChange = false
-      this.$nextTick(function () {
-        this.currObj = i
-        this.canplay()
-      })
+      this.currObj = i
+      this.videoProgress = 0
+      this.playAndPause = false
+      this.isShow = true
     },
-    /* -----音量开始----- */
+    getFileUrl(url) {
+      if (!url) return ""
+      if (/^(https?:)?\/\//.test(url) || url.indexOf("blob:") === 0) return url
+      return this.$ip + url
+    },
+    resetVideo() {
+      const video = this.$refs.video
+      if (video) {
+        video.pause()
+      }
+      this.isChange = false
+      this.videoProgress = 0
+      this.playAndPause = false
+      this.currObj = {}
+    },
+    /* 音量控制 */
     volumeChange(val) {
-      //console.log(val);
       this.volumeProgress = val
       const video = this.$refs.video
-      video.volume = this.volumeProgress / 100
+      if (video) {
+        video.volume = this.volumeProgress / 100
+      }
       this.$store.getters.sysInfo.sphere_effects = val
     },
     end() {
       if (this.isVolume) {
         this.dragging = false
       }
-    },
-    changePage(val) {
-      console.log(val)
     },
     timeStr(val) {
       var duration = parseInt(val)
@@ -266,60 +274,59 @@ export default {
       return minute + isM0 + sec
     },
     sliderStop() {
-      if (this.list.length == 0 && !this.currObj.duration) return
+      if (!this.$refs.video || !this.currObj.duration) return
       if (this.isChange) {
-        this.$refs.video.pause()
-        this.playPause = false
-      }
-    },
-    timeupdateFoo() {
-      if (this.playAndPause) {
-        this.videoProgress = Number(this.$refs.video.currentTime.toFixed(1))
-      } else {
-        setTimeout(() => {
-          this.videoProgress = Number(this.$refs.video.currentTime.toFixed(1))
-        }, 800)
-      }
-    },
-    //进度条
-    progressChange(v) {
-      if (this.list.length == 0 && !this.currObj.duration) return
-      this.$refs.video.currentTime = v
-      this.videoProgress = v
-      setTimeout(() => {
-        this.playAndPause = true
-        this.playVideo()
-      }, 200)
-    },
-
-    //播放暂停
-    playVideo() {
-      if (this.list.length == 0 && !this.currObj.duration) return
-      if (this.playAndPause) {
-        this.$nextTick(() => {
-          this.$refs.video.play()
-        })
-        this.playAndPause = true
-      } else {
         this.$refs.video.pause()
         this.playAndPause = false
       }
     },
-    //播放结束
+    timeupdateFoo() {
+      if (this.$refs.video && !this.isChange) {
+        this.videoProgress = Number(this.$refs.video.currentTime.toFixed(1))
+      }
+    },
+    // 拖动进度条后跳转并继续播放
+    progressChange(v) {
+      const video = this.$refs.video
+      const duration = Number(this.currObj.duration || (video && video.duration) || 0)
+      if (!video || !Number.isFinite(duration) || duration <= 0) return
+
+      const targetTime = Math.min(Math.max(Number(v), 0), duration)
+      video.currentTime = targetTime
+      this.videoProgress = targetTime
+      this.playAndPause = true
+      this.playVideo()
+    },
+
+    // 根据 playAndPause 切换播放和暂停
+    playVideo() {
+      const video = this.$refs.video
+      if (!video || !this.currObj.video_url) return
+      if (this.playAndPause) {
+        const playResult = video.play()
+        if (playResult && playResult.catch) {
+          playResult.catch((err) => {
+            console.error(err)
+            this.playAndPause = false
+          })
+        }
+      } else {
+        video.pause()
+      }
+    },
+    // 播放结束后同步进度和按钮状态
     videoEnded() {
       this.videoProgress = Number(this.currObj.duration)
       this.playAndPause = false
     },
-    //初始化
+    // 视频可播放后同步音量并自动播放
     canplay() {
       const video = this.$refs.video
+      if (!video || !this.currObj.video_url) return
       this.volumeProgress = this.$store.getters.sysInfo.sphere_effects
       video.volume = this.volumeProgress / 100
-      //this.videoProgress = 0
-      this.$nextTick(() => {
-        this.$refs.video.play()
-        this.playAndPause = true
-      })
+      this.playAndPause = true
+      this.playVideo()
     },
     clickClass(id) {
       this.page.video_class_id = id
@@ -331,7 +338,6 @@ export default {
       const res = await videoClassBackApiList()
       if (res.data.code == 200) {
         this.videoClass = res.data.data
-        console.log(this.videoClass)
         this.videoClass.length
           ? (this.page.video_class_id = this.videoClass[0].id)
           : ""

@@ -6,13 +6,7 @@
         <div class="tj_number">
           总共测评次数：
           <span class="number-container" v-if="this.statisticsData.gauge">
-            <span
-              v-for="(digit, index) in this.statisticsData.gauge
-                .toString()
-                .split('')"
-              :key="index"
-              class="digit"
-            >
+            <span v-for="(digit, index) in this.statisticsData.gauge.toString().split('')" :key="index" class="digit">
               {{ digit ? digit : "0" }}
             </span>
           </span>
@@ -25,21 +19,13 @@
           <div>
             <p><i style="color: red">·</i>历史预警总数</p>
             <div style="color: red">
-              {{
-                this.statisticsData.gauge_warning
-                  ? this.statisticsData.gauge_warning
-                  : "0"
-              }}次
+              {{ this.statisticsData.gauge_warning ? this.statisticsData.gauge_warning : "0" }}次
             </div>
           </div>
           <div>
             <p><i style="color: #49aae3">·</i>预警占比</p>
             <div style="color: #49aae3">
-              {{
-                this.statisticsData.gauge_ratio
-                  ? this.statisticsData.gauge_ratio
-                  : "0"
-              }}%
+              {{ this.statisticsData.gauge_ratio ? this.statisticsData.gauge_ratio : "0" }}%
             </div>
           </div>
         </div>
@@ -51,16 +37,12 @@
       </div>
 
       <div class="right">
-        <div class="_title">测评数据统计</div>
+        <div class="_title">训练数据统计</div>
 
-        <div
-          class="jdt_wrap"
-          v-for="(item, i) in this.statisticsData.training"
-          :key="i"
-        >
+        <div class="jdt_wrap" v-for="(item, i) in this.statisticsData.training" :key="i">
           {{ item.game_name }}
           <div class="jdt">
-            <div style="width: 50%"></div>
+            <div style="width: 50%" :style="{ background: jdtColors[i] }"></div>
           </div>
           {{ item.num }}次
         </div>
@@ -82,7 +64,7 @@
         </div>
       </div>
 
-      <div ref="trendChart" class="trendChart"></div>
+      <div ref="trendChart" class="trendChart" :style="{ transform: `scale(${scale})` }"></div>
     </div>
   </div>
 </template>
@@ -106,6 +88,7 @@ export default {
       dateTimestamp: getCurrentDateFormatted(),
       trendChart: null,
       statisticsData: "",
+      jdtColors: ["#0080ff", "#39b3ae", "#4045c9", "#a79269", "#0080ff", "#39b3ae", "#0080ff", "#39b3ae", "#4045c9"],
     }
   },
   watch: {
@@ -150,16 +133,13 @@ export default {
 
       const getMoodImage = (moodValue) => {
         const moodImages = {
-          1: require("@/assets/img/front/clockIn/Emoji_超烂.png"), // 超烂
-          2: require("@/assets/img/front/clockIn/Emoji_不开心.png"), // 不开心
+          5: require("@/assets/img/front/clockIn/Emoji_超烂.png"), // 超烂
+          4: require("@/assets/img/front/clockIn/Emoji_不开心.png"), // 不开心
           3: require("@/assets/img/front/clockIn/Emoji_还行.png"), // 还行
-          4: require("@/assets/img/front/clockIn/Emoji_开心.png"), // 开心
-          5: require("@/assets/img/front/clockIn/Emoji_超开心.png"), // 超开心
+          2: require("@/assets/img/front/clockIn/Emoji_开心.png"), // 开心
+          1: require("@/assets/img/front/clockIn/Emoji_超开心.png"), // 超开心
         }
-        return (
-          moodImages[moodValue] ||
-          require("@/assets/img/front/clockIn/Emoji_超开心.png")
-        )
+        return moodImages[moodValue] || require("@/assets/img/front/clockIn/Emoji_超开心.png")
       }
       // 生成带图片的数据
       const generateDataWithImages = () => {
@@ -186,7 +166,7 @@ export default {
             type: "inside", // 内置型数据区域缩放
             xAxisIndex: 0, // 控制x轴
             start: 0, // 初始缩放开始位置
-            end: 40, // 初始缩放结束位置（显示前20天）
+            end: 80, // 初始缩放结束位置（显示前20天）
           },
         ],
         xAxis: {
@@ -196,6 +176,7 @@ export default {
             color: "#fff",
             interval: 0, // 显示所有标签
             // rotate: 45 // 标签旋转45度
+            margin: 15, // 调整标签与轴线的间距
           },
           axisTick: {
             show: false,
@@ -209,16 +190,17 @@ export default {
           min: 1, // 最小值1分
           max: 5, // 最大值5分
           interval: 1, // 间隔为1
+          inverse: true,
           axisLabel: {
             color: "#fff",
             formatter: function (value) {
               // 将数值转换为心情等级
               const moodMap = {
-                1: "超烂",
-                2: "不开心",
+                1: "超开心",
+                2: "开心",
                 3: "还行",
-                4: "开心",
-                5: "超开心",
+                4: "不开心",
+                5: "超烂",
               }
               return moodMap[value] || value
             },
@@ -348,11 +330,12 @@ export default {
       }
     }
     .jdt {
-      width: 300px;
+      width: 330px;
       height: 12px;
       background: #1a3453;
       border-radius: 6px;
       margin: 18px auto 0 auto;
+      overflow: hidden;
       > div {
         height: 12px;
         background: red;
@@ -383,7 +366,6 @@ export default {
       align-items: center;
       justify-content: center;
       margin-top: 18px;
-
       .jdt {
         width: 200px;
         height: 12px;
@@ -393,24 +375,6 @@ export default {
         > div {
           height: 12px;
           border-radius: 6px;
-          &:nth-child(1) {
-            background: #0080ff;
-          }
-          &:nth-child(2) {
-            background: #39b3ae;
-          }
-          &:nth-child(3) {
-            background: #4045c9;
-          }
-          &:nth-child(4) {
-            background: #a79269;
-          }
-          &:nth-child(5) {
-            background: #0080ff;
-          }
-          &:nth-child(6) {
-            background: #39b3ae;
-          }
         }
       }
     }
@@ -453,8 +417,9 @@ export default {
   }
 
   .trendChart {
-    width: 800px;
-    height: 210px;
+    width: 800PX;
+    height: 210PX;
+    transform-origin: 0 0;
   }
 }
 </style>

@@ -15,10 +15,7 @@
         >
         </startAndendData>
       </div>
-      <buttonVue
-        text="搜索"
-        @clickBtn="() => (page.title = searchName)"
-      ></buttonVue>
+      <buttonVue text="搜索" @clickBtn="() => (page.title = searchName)"></buttonVue>
       <buttonVue text="重置" @clickBtn="reset"></buttonVue>
     </div>
     <!-- 增删改 -->
@@ -27,8 +24,8 @@
         v-auth="'/index/music/addclass'"
         @clickBtn="
           () => {
-            addClassName = '';
-            showAddClass = true;
+            addClassName = ''
+            showAddClass = true
           }
         "
         :iconUrl="require('@/assets/img/backstage/assembly/btnAdd.png')"
@@ -50,16 +47,8 @@
         text="新增音乐"
         @clickBtn="openAdd"
       ></buttonVue>
-      <buttonVue
-        v-auth="'/index/music/edit'"
-        text="修改"
-        @clickBtn="openEdit"
-      ></buttonVue>
-      <buttonVue
-        v-auth="'/index/music/del'"
-        text="删除"
-        @clickBtn="remove"
-      ></buttonVue>
+      <buttonVue v-auth="'/index/music/edit'" text="修改" @clickBtn="openEdit"></buttonVue>
+      <buttonVue v-auth="'/index/music/del'" text="删除" @clickBtn="remove"></buttonVue>
     </div>
     <div class="total">当前列表共有数据：{{ page.total }}条</div>
     <div class="table">
@@ -107,9 +96,7 @@
     </div>
 
     <backstage-dialog
-      :isSaveLoading="
-        addOrEditLoading || uploadAudioLoading || uploadFileLoading
-      "
+      :isSaveLoading="addOrEditLoading || uploadAudioLoading || uploadFileLoading"
       :isAutoSaveClose="false"
       class="add_edit_warp"
       :show.sync="showAdd"
@@ -127,41 +114,22 @@
       <div class="add-admin">
         <span>所属分类:</span>
         <div class="add-select">
-          <selectVue
-            :options="audioClass"
-            v-model="addOrEditForm.music_class_id"
-            ItemValue="id"
-            label="title"
-          >
+          <selectVue :options="audioClass" v-model="addOrEditForm.music_class_id" ItemValue="id" label="title">
           </selectVue>
         </div>
       </div>
 
       <div class="label_title">添加歌曲封面</div>
-      <div class="tip">
-        说明：上传的图片格式为.jpg或.png，建议尺寸不小于240*135px。
-      </div>
+      <div class="tip">说明：上传的图片格式为.jpg或.png，建议尺寸不小于240*240px。</div>
       <div class="add-admin">
         <span style="opacity: 0">音乐封面:</span>
         <div class="add_row">
-          <img
-            class="upload_img"
-            v-if="addOrEditForm.img_url"
-            :src="$ip + addOrEditForm.img_url"
-          />
-          <img
-            class="upload_img"
-            v-else
-            src="@/assets/img/backstage/train/img_add.png"
-          />
+          <img class="upload_img" v-if="addOrEditForm.img_url" :src="$ip + addOrEditForm.img_url" />
+          <img class="upload_img" v-else src="@/assets/img/backstage/train/img_add.png" />
 
           <div class="add_col">
             <div class="button">
-              <uploadButton
-                accept="image/png, image/jpeg"
-                @change="changeUploadFile"
-                v-loading="uploadFileLoading"
-              >
+              <uploadButton accept="image/png, image/jpeg" @change="changeUploadFile" v-loading="uploadFileLoading">
                 本地上传
               </uploadButton>
             </div>
@@ -173,22 +141,12 @@
         <span>音乐音频:</span>
         <div class="add_row">
           <div class="upload_row">
-            <a
-              class="text"
-              v-if="addOrEditForm.music_url"
-              :href="$ip + addOrEditForm.music_url"
-              >{{
-                addOrEditForm.music_url
-                  ? addOrEditForm.music_url.split("/").pop()
-                  : ""
-              }}</a
-            >
+            <a class="text" v-if="addOrEditForm.music_url" :href="$ip + addOrEditForm.music_url">{{
+              addOrEditForm.music_url ? addOrEditForm.music_url.split("/").pop() : ""
+            }}</a>
             <div v-else class="text"></div>
             <div class="button">
-              <UploadButton
-                accept=".mp3"
-                v-loading="uploadAudioLoading"
-                @change="changeUploadAudio"
+              <UploadButton accept=".mp3" v-loading="uploadAudioLoading" @change="changeUploadAudio"
                 >本地上传
               </UploadButton>
             </div>
@@ -220,52 +178,45 @@ import {
   backMusicApiDel,
   backMusicClassApiDel,
   backMusicApiEdit,
-} from "@/server/api/music";
-import { fileApiMusic, fileApiImage } from "@/server/api/file";
-import { copyNonEmptyProperties } from "@/utils/object";
-import { base64ToFile } from "@/utils/url";
+} from "@/server/api/music"
+import { fileApiMusic, fileApiImage } from "@/server/api/file"
+import { copyNonEmptyProperties } from "@/utils/object"
+import { base64ToFile } from "@/utils/url"
 
 export default {
   async created() {
-    await this.getAudioClassList();
-    this.audioClass.length
-      ? (this.page.music_class_id = this.audioClass[0].id)
-      : "";
-    await this.getTableList();
+    await this.getAudioClassList()
+    this.audioClass.length ? (this.page.music_class_id = this.audioClass[0].id) : ""
+    await this.getTableList()
   },
 
   computed: {
     //组合属性用于监听搜索参数自动查询
     combinedProperties() {
-      return (
-        this.page.start_time +
-        this.page.end_time +
-        this.page.music_class_id +
-        this.page.title
-      );
+      return this.page.start_time + this.page.end_time + this.page.music_class_id + this.page.title
     },
     selectIds() {
       return this.tableConfig.tableData
         .filter((v) => v.isCheck)
         .map((v) => v.id)
-        .join(",");
+        .join(",")
     },
     selectRows() {
-      return this.tableConfig.tableData.filter((v) => v.isCheck);
+      return this.tableConfig.tableData.filter((v) => v.isCheck)
     },
     selectRow() {
-      return this.selectRows.length ? this.selectRows[0] : null;
+      return this.selectRows.length ? this.selectRows[0] : null
     },
   },
   watch: {
     allSelect(newAllSelect) {
       // 全选功能
       this.tableConfig.tableData.forEach((item) => {
-        item.isCheck = newAllSelect;
-      });
+        item.isCheck = newAllSelect
+      })
     },
     combinedProperties() {
-      this.getTableList(1);
+      this.getTableList(1)
     },
   },
   data() {
@@ -300,17 +251,17 @@ export default {
       uploadFileLoading: false,
       uploadAudioLoading: false,
       addOrEditLoading: false,
-    };
+    }
   },
   methods: {
     async save() {
-      this.addOrEditLoading = true;
+      this.addOrEditLoading = true
       try {
-        this.addOrEditForm.id ? await this.saveEdit() : await this.saveAdd();
+        this.addOrEditForm.id ? await this.saveEdit() : await this.saveAdd()
       } catch (e) {
-        console.error(e);
+        console.error(e)
       } finally {
-        this.addOrEditLoading = false;
+        this.addOrEditLoading = false
       }
     },
     async saveEdit() {
@@ -321,42 +272,42 @@ export default {
         music_class_id: "",
         music_url: "",
         author: "",
-      };
+      }
 
-      const params = copyNonEmptyProperties(form, { ...this.addOrEditForm });
+      const params = copyNonEmptyProperties(form, { ...this.addOrEditForm })
       const verify = (params) => {
         if (params.title.trim().length == "") {
-          this.$message.error("请输入标题");
-          return false;
+          this.$message.error("请输入标题")
+          return false
         }
         if (params.author.trim().length == "") {
-          this.$message.error("请输入歌手");
-          return false;
+          this.$message.error("请输入歌手")
+          return false
         }
         if (params.music_class_id == "") {
-          this.$message.error("请选择分类");
-          return false;
+          this.$message.error("请选择分类")
+          return false
         }
         if (params.img_url == "") {
-          this.$message.error("请上传封面！");
-          return false;
+          this.$message.error("请上传封面！")
+          return false
         }
 
         if (params.music_url == "") {
-          this.$message.error("请上传音频！");
-          return false;
+          this.$message.error("请上传音频！")
+          return false
         }
-        return true;
-      };
-      let flag = verify(params);
-      if (!flag) {
-        return;
+        return true
       }
-      const res = await backMusicApiEdit({ ...params, version: "v2" });
+      let flag = verify(params)
+      if (!flag) {
+        return
+      }
+      const res = await backMusicApiEdit({ ...params, version: "v2" })
       if (res.data.code == 200) {
-        this.getTableList();
-        this.showAdd = false;
-        this.$message.success("修改成功！");
+        this.getTableList()
+        this.showAdd = false
+        this.$message.success("修改成功！")
       }
     },
     async saveAdd() {
@@ -366,53 +317,53 @@ export default {
         music_class_id: "",
         music_url: "",
         author: "",
-      };
-      const params = copyNonEmptyProperties(form, { ...this.addOrEditForm });
+      }
+      const params = copyNonEmptyProperties(form, { ...this.addOrEditForm })
       const verify = (params) => {
         if (params.title.trim().length == "") {
-          this.$message.error("请输入标题");
-          return false;
+          this.$message.error("请输入标题")
+          return false
         }
         if (params.author.trim().length == "") {
-          this.$message.error("请输入发布人");
-          return false;
+          this.$message.error("请输入发布人")
+          return false
         }
         if (params.music_class_id == "") {
-          this.$message.error("请选择分类");
-          return false;
+          this.$message.error("请选择分类")
+          return false
         }
         if (params.img_url == "") {
-          this.$message.error("请上传封面！");
-          return false;
+          this.$message.error("请上传封面！")
+          return false
         }
 
         if (params.music_url == "") {
-          this.$message.error("请上传音频！");
-          return false;
+          this.$message.error("请上传音频！")
+          return false
         }
-        return true;
-      };
-      let flag = verify(params);
-      if (!flag) {
-        return;
+        return true
       }
-      const res = await backMusicApiAdd({ ...params, version: "v2" });
+      let flag = verify(params)
+      if (!flag) {
+        return
+      }
+      const res = await backMusicApiAdd({ ...params, version: "v2" })
       if (res.data.code == 200) {
-        this.getTableList();
-        this.showAdd = false;
-        this.$message.success("新增成功！");
+        this.getTableList()
+        this.showAdd = false
+        this.$message.success("新增成功！")
       }
     },
 
     async saveClass() {
       if (this.addClassName.trim() == "") {
-        this.$message.error("请输入分类名称！");
-        return;
+        this.$message.error("请输入分类名称！")
+        return
       }
-      const res = await backMusicClassApiAdd({ title: this.addClassName });
+      const res = await backMusicClassApiAdd({ title: this.addClassName })
       if (res.data.code == 200) {
-        this.$message.success("新增成功");
-        this.getAudioClassList();
+        this.$message.success("新增成功")
+        this.getAudioClassList()
       }
     },
 
@@ -422,55 +373,51 @@ export default {
         title: "",
         img_url: "",
         music_url: "",
-      };
-      this.showAdd = true;
+      }
+      this.showAdd = true
     },
     openEdit() {
       if (this.selectRows.length > 1) {
-        this.$message.error("请勾选单个，只支持单个编辑！");
-        return;
+        this.$message.error("请勾选单个，只支持单个编辑！")
+        return
       }
       if (!this.selectRow) {
-        this.$message.error("请勾选需要编辑的音乐！");
-        return;
+        this.$message.error("请勾选需要编辑的音乐！")
+        return
       }
-      this.addOrEditForm = JSON.parse(JSON.stringify(this.selectRow));
+      this.addOrEditForm = JSON.parse(JSON.stringify(this.selectRow))
 
-      this.showAdd = true;
+      this.showAdd = true
     },
     //获取
     async getAudioClassList() {
-      const res = await backMusicClassApiList();
+      const res = await backMusicClassApiList()
       if (res.data.code == 200) {
-        this.audioClass = res.data.data;
+        this.audioClass = res.data.data
       }
     },
     async getTableList(page) {
       if (page) {
-        this.page.page = page;
+        this.page.page = page
       }
       const params = {
         ...this.page,
-      };
+      }
 
-      params.start_time = params.start_time
-        ? new Date(params.start_time).getTime() / 1000
-        : "";
-      params.end_time = params.end_time
-        ? new Date(params.end_time).getTime() / 1000
-        : "";
+      params.start_time = params.start_time ? new Date(params.start_time).getTime() / 1000 : ""
+      params.end_time = params.end_time ? new Date(params.end_time).getTime() / 1000 : ""
 
-      const res = await backMusicApiList(params);
+      const res = await backMusicApiList(params)
       if (res.data.code == 200) {
-        this.page.page = res.data.data.current_page;
-        this.page.total = res.data.data.total;
+        this.page.page = res.data.data.current_page
+        this.page.total = res.data.data.total
         this.tableConfig.tableData = res.data.data.data.map((v) => {
-          return { ...v, isCheck: false };
-        });
+          return { ...v, isCheck: false }
+        })
       }
     },
     reset() {
-      let music_class_id = this.page.music_class_id;
+      let music_class_id = this.page.music_class_id
       this.page = {
         title: "",
         start_time: "",
@@ -479,76 +426,74 @@ export default {
         page: 1,
         page_size: 10,
         music_class_id: "",
-      };
-      this.page.music_class_id = music_class_id;
+      }
+      this.page.music_class_id = music_class_id
 
-      this.searchName = "";
+      this.searchName = ""
     },
     // 删除
     async remove() {
       if (!this.selectIds) {
-        this.$message.error("请勾选需要删除的音频！");
-        return;
+        this.$message.error("请勾选需要删除的音频！")
+        return
       }
 
-      let flag = await this.$backstagePopup.asyncShow(`是否删除选中的内容？`);
+      let flag = await this.$backstagePopup.asyncShow(`是否删除选中的内容？`)
       if (flag) {
-        const res = await backMusicApiDel({ ids: this.selectIds });
+        const res = await backMusicApiDel({ ids: this.selectIds })
         if (res.data.code == 200) {
-          this.$message.success("删除成功！");
-          this.getTableList();
+          this.$message.success("删除成功！")
+          this.getTableList()
         }
       }
     },
     async removeClass() {
       if (!this.page.music_class_id) {
-        this.$message.error("请选择需要删除的分类！");
-        return;
+        this.$message.error("请选择需要删除的分类！")
+        return
       }
 
       let flag = await this.$backstagePopup.asyncShow(
-        `是否删除选中的分类？<span style="color: #FF9500">注意删除分类会将分类下面的资源删除！</span>`
-      );
+        `是否删除选中的分类？<span style="color: #FF9500">注意删除分类会将分类下面的资源删除！</span>`,
+      )
       if (flag) {
         const res = await backMusicClassApiDel({
           ids: this.page.music_class_id,
-        });
+        })
         if (res.data.code == 200) {
-          this.$message.success("删除成功！");
-          await this.getAudioClassList();
-          this.audioClass.length
-            ? (this.page.music_class_id = this.audioClass[0].id)
-            : (this.page.music_class_id = "");
-          this.getTableList();
+          this.$message.success("删除成功！")
+          await this.getAudioClassList()
+          this.audioClass.length ? (this.page.music_class_id = this.audioClass[0].id) : (this.page.music_class_id = "")
+          this.getTableList()
         }
       }
     },
     async changeUploadFile(file) {
       const isImage = (file) => {
-        const extensions = ["png", "jpg", "jpeg"];
-        const fileType = file.name.split(".").pop().toLowerCase();
-        return extensions.includes(fileType);
-      };
+        const extensions = ["png", "jpg", "jpeg"]
+        const fileType = file.name.split(".").pop().toLowerCase()
+        return extensions.includes(fileType)
+      }
 
       const checkImageSize = (file, maxWidth, maxHeight) => {
         return new Promise((resolve, reject) => {
-          const img = new Image();
+          const img = new Image()
           img.onload = function () {
-            const width = img.width;
-            const height = img.height;
+            const width = img.width
+            const height = img.height
             if (width > maxWidth || height > maxHeight) {
-              reject("图片尺寸超过指定大小");
+              reject("图片尺寸超过指定大小")
             } else {
-              resolve("图片尺寸符合要求");
+              resolve("图片尺寸符合要求")
             }
-          };
-          img.onerror = reject;
-          img.src = URL.createObjectURL(file);
-        });
-      };
+          }
+          img.onerror = reject
+          img.src = URL.createObjectURL(file)
+        })
+      }
       if (!isImage(file)) {
-        this.$message.error("上传图片格式必须为png 或jpg 格式");
-        return;
+        this.$message.error("上传图片格式必须为png 或jpg 格式")
+        return
       }
 
       //验证图片尺寸
@@ -559,52 +504,50 @@ export default {
       //   this.$message.error(error)
       //   return
       // }
-      this.uploadFileLoading = true;
+      this.uploadFileLoading = true
 
       try {
-        const data = await this.$imgCutting.asyncShow(file.raw, 240, 135);
-        let cuttingFile = base64ToFile(data);
-        const res = await fileApiImage(cuttingFile);
+        const data = await this.$imgCutting.asyncShow(file.raw, 240, 240)
+        let cuttingFile = base64ToFile(data)
+        const res = await fileApiImage(cuttingFile)
         if (res.data.code == 200) {
-          this.addOrEditForm.img_url = res.data.data;
+          this.addOrEditForm.img_url = res.data.data
         }
       } catch (error) {
-        console.error(error);
+        console.error(error)
       } finally {
-        this.uploadFileLoading = false;
+        this.uploadFileLoading = false
       }
     },
     async changeUploadAudio(file) {
       const isMp3 = (file) => {
-        const extensions = ["mp3"];
-        const fileType = file.name.split(".").pop().toLowerCase();
-        return extensions.includes(fileType);
-      };
-
-      if (!isMp3(file)) {
-        this.$message.error("上传音频为mp3格式");
-        return;
+        const extensions = ["mp3"]
+        const fileType = file.name.split(".").pop().toLowerCase()
+        return extensions.includes(fileType)
       }
 
-      this.uploadAudioLoading = true;
+      if (!isMp3(file)) {
+        this.$message.error("上传音频为mp3格式")
+        return
+      }
+
+      this.uploadAudioLoading = true
 
       try {
-        const res = await fileApiMusic(file);
+        const res = await fileApiMusic(file)
         if (res.data.code == 200) {
-          this.addOrEditForm.music_url = res.data.data;
+          this.addOrEditForm.music_url = res.data.data
 
-          this.addOrEditForm.title
-            ? ""
-            : (this.addOrEditForm.title = file.name);
+          this.addOrEditForm.title ? "" : (this.addOrEditForm.title = file.name)
         }
       } catch (error) {
-        console.error(error);
+        console.error(error)
       } finally {
-        this.uploadAudioLoading = false;
+        this.uploadAudioLoading = false
       }
     },
   },
-};
+}
 </script>
 <style lang="less" scoped>
 .class-box {
@@ -920,7 +863,7 @@ export default {
               }
 
               .upload_img {
-                width: 192px;
+                width: 108px;
                 height: 108px;
               }
 

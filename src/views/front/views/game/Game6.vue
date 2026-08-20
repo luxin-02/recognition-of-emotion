@@ -35,7 +35,7 @@
                         <div class="tip">
                             <p>游戏规则</p>
                             <div>
-                                请使用上下左右键控制小方块移动，帮 小方块找到回家的路，你可以观看左上角提 示。点击自动寻路会出现路线提示。
+                                请使用上下左右键控制小方块移动，帮小方块找到回家的路，你可以观看左上角提示。点击自动寻路会出现路线提示。
                             </div>
                         </div>
                         <div class="sorrow">
@@ -55,7 +55,7 @@
         <div class="open" v-if="isVisible">
             <div>
                 <p>恭喜通关</p>
-                <div v-html="strText"></div>
+                <div v-html="strText" style="text-align: center;"></div>
             </div>
         </div>
     </div>

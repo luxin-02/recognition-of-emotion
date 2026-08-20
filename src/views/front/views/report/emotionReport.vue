@@ -54,7 +54,7 @@
       <br />
 
       <div class="mk_title"><i></i>报告结果</div>
-      <div class="report_score" v-if="reportData.image_analysis">
+      <div class="report_score" v-if="reportData.image_analysis && reportData.image_analysis.name">
         <div class="instrument">
           <div class="fenshu">{{ reportData.image_analysis.value[0] }}<i>分</i></div>
           <div class="zhpf">{{ reportData.image_analysis.name[0] }}</div>
@@ -82,7 +82,7 @@
       <br />
 
       <!-- ----------- -->
-      <template v-if="reportData.negative">
+      <template v-if="reportData.negative && reportData.negative.name">
         <br />
         <div class="mk_title"><i></i>负面情绪分析</div>
         <div
@@ -201,7 +201,7 @@
       <!-- ----------- -->
 
       <div class="mk_title"><i></i>情绪总体分析：</div>
-      <template v-if="reportData.image_analysis">
+      <template v-if="reportData.image_analysis && reportData.image_analysis.name">
         <div class="summarize" v-for="(item, i) in reportData.image_analysis.name" :key="item.name">
           <div class="analyse_title"><i></i>{{ item }}分析：</div>
           <div class="analyse_content">
@@ -229,6 +229,7 @@
 import * as echarts from "echarts"
 import scaleMixin from "@/mixins/scaleMixin"
 import { getSmileAssessDetail } from "@/server/api/detection"
+import { normalizeDetectionSection, toTextList } from "@/utils/detectionReport"
 export default {
   mixins: [scaleMixin],
   data() {
@@ -264,10 +265,10 @@ export default {
         })
         if (data.code == this.$global.successCode) {
           this.reportData = data.data
-          this.reportData.image_analysis = this.safeJsonParse(this.reportData.image_analysis)
-          this.reportData.mental_ability = this.safeJsonParse(this.reportData.mental_ability)
-          this.reportData.negative = this.safeJsonParse(this.reportData.negative)
-          this.reportData.positive = this.safeJsonParse(this.reportData.positive)
+          this.reportData.image_analysis = normalizeDetectionSection(this.safeJsonParse(this.reportData.image_analysis))
+          this.reportData.mental_ability = normalizeDetectionSection(this.safeJsonParse(this.reportData.mental_ability))
+          this.reportData.negative = normalizeDetectionSection(this.safeJsonParse(this.reportData.negative))
+          this.reportData.positive = normalizeDetectionSection(this.safeJsonParse(this.reportData.positive))
           this.reportData.comprehensive = this.safeJsonParse(this.reportData.comprehensive)
           console.log(this.reportData)
           this.progressValue = this.reportData.image_analysis.value[0] || 0
@@ -282,8 +283,12 @@ export default {
             this.roseMapChart = echarts.init(document.getElementById("roseChart"))
             this.radarMapChart = echarts.init(document.getElementById("radarMap"))
             this.barGraphChart = echarts.init(document.getElementById("barGraph"))
-            this.radarMapChartFn(this.reportData.negative.name, this.reportData.negative.value)
-            this.roseChartFn(this.reportData.positive.value)
+            if (this.reportData.negative.name.length) {
+              this.radarMapChartFn(this.reportData.negative.name, this.reportData.negative.value)
+            }
+            if (this.reportData.positive.value.length) {
+              this.roseChartFn(this.reportData.positive.value)
+            }
             this.barGraphChartFn(this.reportData.mental_ability.name, this.reportData.mental_ability.value)
             this.drawSemiCircleProgress()
           })
@@ -295,10 +300,7 @@ export default {
       }
     },
     radarMapChartFn(data, series) {
-      let indicator = []
-      data.forEach((item) => {
-        indicator.push({ name: item, max: 100 })
-      })
+      const indicator = toTextList(data).map((item) => ({ name: item, max: 100 }))
       let option = {
         // 设置背景颜色与页面容器一致
         backgroundColor: "#082047",
@@ -388,6 +390,8 @@ export default {
     },
     barGraphChartFn(data, series) {
       console.log(data, series)
+      const xAxisData = Array.isArray(data) ? data : []
+      const seriesData = Array.isArray(series) ? series : []
       let option = {
         animation: false,
         grid: {
@@ -398,7 +402,7 @@ export default {
         },
         xAxis: {
           type: "category",
-          data: data,
+          data: xAxisData,
           axisLine: {
             lineStyle: {
               color: "#3d5a98",
@@ -435,7 +439,7 @@ export default {
           // 背景柱
           {
             type: "bar",
-            data: new Array(this.leftBottomXData.length).fill(100),
+            data: new Array(xAxisData.length).fill(100),
             barWidth: 42,
             barGap: "-100%",
             itemStyle: {
@@ -453,7 +457,7 @@ export default {
             symbolMargin: 2,
             symbolSize: [35, 13],
             symbolBoundingData: 100,
-            data: series,
+            data: seriesData,
             z: 2,
             itemStyle: {
               color: (params) => {

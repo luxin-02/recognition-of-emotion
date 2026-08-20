@@ -43,8 +43,8 @@
     </div>
     <div class="open" v-if="isVisiable">
       <div>
-        <p>恭喜通关</p>
-        <div v-html="strText"></div>
+        <p>游戏结束</p>
+        <div v-html="strText" style="text-align: center"></div>
       </div>
     </div>
   </div>
@@ -99,17 +99,20 @@ export default {
       if (n == 0) {
         this.clearTimer()
         this.isVisiable = true
-        this.strText = `
-                    <p>恭喜你，30秒通关到了第${this.level - 2}关！</p>
-                `
+        const passed = this.level - 2
+        if (passed <= 0) {
+          this.strText = `<p>再接再厉，不骄不躁，把每一次进步都当作下一次突破的基础！</p>`
+        } else {
+          this.strText = `<p>恭喜你，30秒通关到了第${passed}关！</p>`
+        }
         setTimeout(async () => {
           this.isVisiable = false
           this.isClick = false
           await reportApiAdd({
             cat_name: "心理训练",
             game_name: "眼力大比拼",
-            score: 100,
-            seconds: this.time,
+            score: this.score,
+            seconds: 30,
           }).then(({ data }) => {
             if (data.code == this.$global.successCode) {
               this.$router.go(-1) // 返回上一页
@@ -148,6 +151,10 @@ export default {
       this.clearTimer()
       this.isClick = true
       this.level = 2
+      // 如果是“再玩一次”，重置分数
+      if (type === 1) {
+        this.score = 0
+      }
       this.time = 30
       this.img1 = this.typeList[this.curImageIndex].img
       this.img2 = this.typeList[this.curImageIndex].found
@@ -161,7 +168,7 @@ export default {
       if (this.isClick == true) {
         if (this.level != 1) {
           if (item == this.img2) {
-            this.start()
+            this.passLevel()
           } else {
             this.$toast("", "这张不是你需要找的图片！")
           }
@@ -177,6 +184,12 @@ export default {
       if (this.level == 2) {
         this.countTime()
       }
+    },
+
+    passLevel() {
+      // 通过一关得 20 分，最多 100 分
+      this.score = Math.min(100, this.score + 20)
+      this.start()
     },
     reset(data, level) {
       var newData = []

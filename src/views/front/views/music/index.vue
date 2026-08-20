@@ -230,6 +230,9 @@
 
 <script>
 import { frontMusicClassApiList, frontMusicApiList, frontMusicRandMusic } from "@/server/api/music"
+
+const PAGE_SIZE = 5
+
 export default {
   props: ["volueNum"],
   data() {
@@ -238,9 +241,7 @@ export default {
       MusicProgress: 0,
       musicActive: "",
       classActive: "",
-      //播放暂停
       playPause: false,
-      //当前播放
       currentMusic: {},
       classList: [],
       musicList: {
@@ -248,14 +249,12 @@ export default {
         total: 0,
         fimlActive: 0,
         page: 1,
-        page_size: 5,
+        page_size: PAGE_SIZE,
       },
-
       musicVolume: 0,
       searchText: "",
       playMode: "order",
       volumeShow: false,
-
       fullShow: false,
       fullVolumeShow: false,
     }
@@ -268,114 +267,144 @@ export default {
     playPause() {
       this.$emit("musicPlay", this.playPause)
       this.$store.getters.musicObj.playPause = this.playPause
-    },
-    volueNum(newv) {
-      this.musicVolume = newv
-      this.$refs.audioref.volume = newv / 100
-    },
-    "$store.getters.isLogin"(e) {
-      if (e) {
-        // this.getMusicClass();
-        // this.musicVolume = Number(this.$store.getters.sysInfo.sphere_effects);
+      if (!this.playPause && this.$refs.audioref) {
+        this.$refs.audioref.pause()
       }
+    },
+    volueNum(newValue) {
+      this.setVolume(newValue)
     },
     "$store.getters.sysInfo.sphere_effects"(newValue) {
-      this.musicVolume = Number(newValue)
-      if (this.$refs.audioref) {
-        this.$refs.audioref.volume = this.musicVolume / 100
-      }
+      this.setVolume(newValue)
     },
   },
   mounted() {
     this.getMusicClass()
-    this.musicVolume = Number(this.$store.getters.sysInfo.sphere_effects)
-    this.$refs.audioref.volume = this.musicVolume / 100
-  },
-  computed: {
-    imgState() {
-      return this.playPause ? true : false
-    },
+    this.setVolume(this.$store.getters.sysInfo.sphere_effects)
   },
   methods: {
+    // 初始化分类，分类为空时清空播放状态，避免访问空数组报错。
     async getMusicClass() {
       const { data } = await frontMusicClassApiList()
-      if (data.code == this.$global.successCode) {
-        this.classList = data.data
-        this.classBtn(data.data[0].id, 1)
+      if (data.code != this.$global.successCode) return
+
+      this.classList = Array.isArray(data.data) ? data.data : []
+      if (this.classList.length) {
+        await this.classBtn(this.classList[0].id, 1)
+      } else {
+        this.resetMusicList()
       }
     },
-    async classBtn(id, page) {
+    // 按分类和页码加载音乐列表，返回当前页列表供随机/切歌复用。
+    async classBtn(id, page = 1) {
+      if (!id) {
+        this.resetMusicList()
+        return []
+      }
+
       this.classActive = id
       this.musicList.page = page
       this.musicLoading = true
+
       try {
-        const { data } = await frontMusicApiList({
-          music_class_id: id,
-          page: this.musicList.page,
-          page_size: this.musicList.page_size,
-          title: this.searchText,
-        })
+        const { data } = await this.fetchMusicList(page)
         if (data.code == this.$global.successCode) {
-          this.musicList.total = data.data.total
-          this.musicList.list = data.data.data.map((item, index) => {
-            return {
-              no: (page - 1) * 5 + index + 1,
-              ...item,
-            }
-          })
+          this.setMusicList(data.data, page)
+          return this.musicList.list
         }
       } catch (error) {
+        this.showError("音乐列表加载失败")
       } finally {
         this.musicLoading = false
       }
+
+      return []
+    },
+    fetchMusicList(page) {
+      return frontMusicApiList({
+        music_class_id: this.classActive,
+        page,
+        page_size: this.musicList.page_size,
+        title: this.searchText,
+      })
+    },
+    // 统一补充分页序号和时长类型，避免各处重复 map。
+    setMusicList(pageData = {}, page = 1) {
+      const list = Array.isArray(pageData.data) ? pageData.data : []
+      this.musicList.total = Number(pageData.total) || 0
+      this.musicList.page = page
+      this.musicList.list = list.map((item, index) => ({
+        ...item,
+        no: (page - 1) * this.musicList.page_size + index + 1,
+        duration: Number(item.duration) || 0,
+      }))
+    },
+    // 清空列表和播放状态，适用于无分类或接口返回空数据。
+    resetMusicList() {
+      this.musicList.list = []
+      this.musicList.total = 0
+      this.musicList.fimlActive = 0
+      this.musicList.page = 1
+      this.currentMusic = {}
+      this.musicActive = ""
+      this.playPause = false
+      this.MusicProgress = 0
     },
     pageChange(type) {
+      if (!this.classActive) return
+
+      const maxPage = Math.max(Math.ceil(this.musicList.total / this.musicList.page_size), 1)
       if (type == "next") {
-        if (Math.ceil(this.musicList.total / 5) <= this.musicList.page) return
+        if (this.musicList.page >= maxPage) return
         this.musicList.page += 1
       } else {
         if (this.musicList.page === 1) return
         this.musicList.page -= 1
       }
-      // this.musicList.page = v;
+
       this.classBtn(this.classActive, this.musicList.page)
     },
-    musicBtn(item, i) {
-      // console.log(item);
+    // 选中音乐后重新加载 audio；用户点击播放时立即尝试播放。
+    musicBtn(item, index, autoPlay = false) {
+      if (!item || !item.music_url) return
+
       this.musicActive = item.id
-      this.$refs.audioref.load()
-      this.currentMusic = item
-      this.musicList.fimlActive = i
-      this.currentMusic.duration = Number(this.currentMusic.duration)
-      // this.$nextTick(() => {
-      //   this.$refs.audioref.play();
+      this.currentMusic = {
+        ...item,
+        duration: Number(item.duration) || 0,
+        page: this.musicList.page,
+      }
+      this.musicList.fimlActive = index
       this.playPause = true
-      this.currentMusic.page = this.musicList.page
-      // });
+      this.MusicProgress = 0
+
+      this.$nextTick(() => {
+        if (!this.$refs.audioref) return
+        this.$refs.audioref.load()
+        if (autoPlay) this.playAudio()
+      })
     },
     canplay() {
-      if (this.MusicProgress !== 0) return
-      this.$refs.audioref.play()
+      if (this.playPause) this.playAudio()
     },
-    //进度条
-    progressChange(v) {
-      this.$refs.audioref.currentTime = v
+    progressChange(value) {
+      if (this.$refs.audioref) this.$refs.audioref.currentTime = value
     },
-    volumeChange(v) {
-      this.musicVolume = v
-      this.$refs.audioref.volume = this.musicVolume / 100
+    volumeChange(value) {
+      this.setVolume(value)
       this.$emit("volumeCurrent", this.musicVolume)
     },
-    //监听音乐播放进度
+    // 音量来源可能是系统设置或滑块，统一限制在 0-100。
+    setVolume(value) {
+      const volume = Math.min(Math.max(Number(value) || 0, 0), 100)
+      this.musicVolume = volume
+      if (this.$refs.audioref) {
+        this.$refs.audioref.volume = volume / 100
+      }
+    },
     timeupdateFoo() {
+      if (!this.$refs.audioref) return
       this.MusicProgress = Number(this.$refs.audioref.currentTime.toFixed(1))
-      // console.log(Number(this.$refs.audioref.currentTime.toFixed(1)));
-      if (this.playPause) {
-        this.$refs.audioref.play()
-      }
-      if (!this.playPause) {
-        this.$refs.audioref.pause()
-      }
     },
     audioEnded() {
       if (this.playMode == "order") {
@@ -384,95 +413,54 @@ export default {
         this.RandMusic()
       }
     },
+    // 随机接口返回目标音乐和页码，先切到对应页再高亮播放。
     async RandMusic() {
-      const { data } = await frontMusicRandMusic({
-        class_id: this.classActive,
-      })
-      if (data.code == this.$global.successCode) {
-        console.log(data.data)
-        this.musicList.page = data.data.page
-        this.classBtn(this.classActive, this.musicList.page)
-        this.$nextTick(() => {
-          let fimlActive = this.musicList.list.findIndex((v) => v.id == data.data.id)
-          this.musicBtn(data.data, fimlActive)
-        })
-        return
-      }
-    },
-    //上一首
-    async Previous() {
-      if (!this.currentMusic.music_url) return
-      if (this.musicList.fimlActive <= 0) {
-        if (this.musicList.page <= 1) return
-        try {
-          this.musicLoading = true
-          this.musicList.page--
-          const { data } = await frontMusicApiList({
-            music_class_id: this.classActive,
-            page: this.musicList.page,
-            page_size: this.musicList.page_size,
-          })
-          if (data.code == this.$global.successCode) {
-            this.musicList.list = data.data.data.map((item, index) => {
-              return {
-                no: (this.musicList.page - 1) * 5 + index + 1,
-                ...item,
-              }
-            })
-            var item = this.musicList.list[this.musicList.page_size - 1]
-            this.musicBtn(item, this.musicList.page_size - 1)
-          }
-        } catch (error) {
-        } finally {
-          this.musicLoading = false
-        }
-      } else {
-        // var item = this.musicList.list[(this.musicList.fimlActive -= 1)];
-        // this.musicBtn(item, this.musicList.fimlActive);
+      const { data } = await frontMusicRandMusic({ class_id: this.classActive })
+      if (data.code != this.$global.successCode || !data.data) return
 
-        if (this.musicList.page == this.currentMusic.page) {
-          var item = this.musicList.list[(this.musicList.fimlActive -= 1)]
-          this.musicBtn(item, this.musicList.fimlActive)
-        } else {
-          try {
-            this.musicLoading = true
-            this.musicList.page = this.currentMusic.page
-            const { data } = await frontMusicApiList({
-              music_class_id: this.classActive,
-              page: this.currentMusic.page,
-              page_size: this.musicList.page_size,
-            })
-            if (data.code == this.$global.successCode) {
-              this.musicList.list = data.data.data.map((item, index) => {
-                return {
-                  no: (this.musicList.page - 1) * 5 + index + 1,
-                  ...item,
-                }
-              })
-              var item = this.musicList.list[(this.musicList.fimlActive -= 1)]
-              this.musicBtn(item, this.musicList.fimlActive)
-            }
-          } catch (error) {
-          } finally {
-            this.musicLoading = false
-          }
-        }
-      }
+      const page = Number(data.data.page) || 1
+      const list = await this.classBtn(this.classActive, page)
+      const index = list.findIndex((item) => item.id == data.data.id)
+      this.musicBtn(data.data, index >= 0 ? index : 0)
     },
-    //播放暂停
-    playMusic() {
-      if (!this.currentMusic.music_url) {
-        if (this.musicList.list.length > 0) {
-          this.musicBtn(this.musicList.list[0], 0)
-        }
+    async Previous() {
+      await this.changeSong(-1)
+    },
+    async nextSong() {
+      await this.changeSong(1)
+    },
+    // step 为 1 表示下一首，-1 表示上一首；跨页时自动加载相邻页。
+    async changeSong(step) {
+      if (!this.currentMusic.music_url || this.musicLoading) return
+
+      const nextIndex = this.musicList.fimlActive + step
+      if (nextIndex >= 0 && nextIndex < this.musicList.list.length) {
+        this.musicBtn(this.musicList.list[nextIndex], nextIndex)
         return
       }
+
+      const maxPage = Math.ceil(this.musicList.total / this.musicList.page_size)
+      const nextPage = this.musicList.page + step
+      if (nextPage < 1 || nextPage > maxPage) return
+
+      const list = await this.classBtn(this.classActive, nextPage)
+      const index = step > 0 ? 0 : list.length - 1
+      if (list[index]) this.musicBtn(list[index], index)
+    },
+    playMusic() {
+      console.log('123');
+      
+      if (!this.currentMusic.music_url) {
+        if (this.musicList.list.length) this.musicBtn(this.musicList.list[0], 0, true)
+        return
+      }
+
       if (this.playPause) {
         this.$refs.audioref.pause()
         this.playPause = false
       } else {
-        this.$refs.audioref.play()
         this.playPause = true
+        this.playAudio()
       }
     },
     playMusic2() {
@@ -480,103 +468,33 @@ export default {
         this.RandMusic()
         return
       }
-      if (this.playPause) {
-        this.$refs.audioref.pause()
-        this.playPause = false
-      } else {
-        this.$refs.audioref.play()
-        this.playPause = true
-      }
+      this.playMusic()
     },
-    //下一首
-    async nextSong() {
-      if (!this.currentMusic.music_url) return
-      // if (this.musicList.total <= this.musicList.list.length) return;
-      if (this.musicList.fimlActive >= this.musicList.list.length - 1) {
-        let maxPage = Math.ceil(this.musicList.total / this.musicList.page_size)
-        // if (this.musicList.page >= maxPage) return;
-        if (this.musicList.page >= maxPage) {
-          if (
-            this.musicList.page == this.currentMusic.page &&
-            this.musicList.fimlActive >= this.musicList.list.length - 1
-          )
-            return
-          const { data } = await frontMusicApiList({
-            music_class_id: this.classActive,
-            page: this.musicList.page,
-            page_size: this.musicList.page_size,
-          })
-          if (data.code == this.$global.successCode) {
-            this.musicList.list = data.data.data.map((item, index) => {
-              return {
-                no: (this.musicList.page - 1) * 5 + index + 1,
-                ...item,
-              }
-            })
+    // 浏览器可能拦截自动播放，失败时同步恢复暂停状态。
+    playAudio() {
+      const audio = this.$refs.audioref
+      if (!audio) return
 
-            var item = this.musicList.list[0]
-            this.musicBtn(item, 0)
-          }
-          return
-        }
-        try {
-          this.musicLoading = true
-          this.musicList.page++
-          const { data } = await frontMusicApiList({
-            music_class_id: this.classActive,
-            page: this.musicList.page,
-            page_size: this.musicList.page_size,
-          })
-          if (data.code == this.$global.successCode) {
-            this.musicList.list = data.data.data.map((item, index) => {
-              return {
-                no: (this.musicList.page - 1) * 5 + index + 1,
-                ...item,
-              }
-            })
-            var item = this.musicList.list[0]
-            this.musicBtn(item, 0)
-          }
-        } catch (error) {
-        } finally {
-          this.musicLoading = false
-        }
-      } else {
-        if (this.musicList.page == this.currentMusic.page) {
-          var item = this.musicList.list[(this.musicList.fimlActive += 1)]
-          this.musicBtn(item, this.musicList.fimlActive)
-        } else {
-          try {
-            this.musicLoading = true
-            this.musicList.page = this.currentMusic.page
-            const { data } = await frontMusicApiList({
-              music_class_id: this.classActive,
-              page: this.currentMusic.page,
-              page_size: this.musicList.page_size,
-            })
-            if (data.code == this.$global.successCode) {
-              this.musicList.list = data.data.data.map((item, index) => {
-                return {
-                  no: (this.musicList.page - 1) * 5 + index + 1,
-                  ...item,
-                }
-              })
-              var item = this.musicList.list[(this.musicList.fimlActive += 1)]
-              this.musicBtn(item, this.musicList.fimlActive)
-            }
-          } catch (error) {
-          } finally {
-            this.musicLoading = false
-          }
-        }
+      const playPromise = audio.play()
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(() => {
+          this.playPause = false
+        })
       }
     },
     enterFullScreen() {
       if (!this.currentMusic.id) {
-        this.$myMessage.error("请先选择音乐播放后再进入全屏")
+        this.showError("请先选择音乐播放后再进入全屏")
         return
       }
       this.fullShow = true
+    },
+    showError(message) {
+      if (this.$myMessage && this.$myMessage.error) {
+        this.$myMessage.error(message)
+      } else if (this.$message && this.$message.error) {
+        this.$message.error(message)
+      }
     },
   },
 }
@@ -827,6 +745,7 @@ export default {
               }
               &.cz {
                 width: 140px;
+                cursor: pointer;
               }
             }
           }
@@ -975,6 +894,7 @@ export default {
           line-height: 50px;
           letter-spacing: 0.9px;
           font-family: "ziyuanyuanti500W";
+          cursor: pointer;
           > img {
             width: 18px;
             height: 18px;

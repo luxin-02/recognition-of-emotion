@@ -45,7 +45,7 @@
     <div class="open" v-if="isVisiable">
       <div>
         <p>恭喜通关</p>
-        <div v-html="strText"></div>
+        <div v-html="strText" style="text-align: center"></div>
       </div>
     </div>
   </div>
@@ -145,7 +145,6 @@ export default {
                 `
         setTimeout(async () => {
           this.level++
-          this.handleList()
           this.isVisiable = false
           await reportApiAdd({
             cat_name: "心理训练",
@@ -154,6 +153,7 @@ export default {
             seconds: this.time,
           }).then(({ data }) => {
             if (data.code == this.$global.successCode) {
+              this.handleList()
               this.$router.go(-1) // 返回上一页
             }
           })

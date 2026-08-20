@@ -146,6 +146,7 @@ export default [
         component: () => import("@/views/front/views/article/index.vue"),
         meta: {
           title: "心理科普",
+          keepAlive: true,
         },
       },
       {

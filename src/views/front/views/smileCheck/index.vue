@@ -6,15 +6,7 @@
         :key="item.id"
         :class="['avatar_dot', { visible: item.visible }]"
         :style="avatarStyle(item)"
-        @click="
-          () => {
-            detailsId = item.detailId
-            shootDetailsShow = true
-            $nextTick(() => {
-              $refs.shootRef.getDetails()
-            })
-          }
-        "
+        @click="openAvatarDetails(item)"
       >
         <img :src="item.avatar" />
       </div>
@@ -26,7 +18,7 @@
       </div>
     </div>
 
-    <shoot :show.sync="shootShow" />
+    <shoot :show.sync="shootShow" @published="refreshSmileUsers" />
     <shootDetails ref="shootRef" :show.sync="shootDetailsShow" :detailsId="detailsId" />
   </div>
 </template>
@@ -89,6 +81,10 @@ export default {
       this.generateSmileUsers(avatarData)
     },
 
+    async refreshSmileUsers() {
+      await this.initSmileUsers()
+    },
+
     getStarFieldRect() {
       const starField = this.$refs.starField
       if (!starField || !starField.getBoundingClientRect) {
@@ -127,27 +123,34 @@ export default {
     },
 
     async loadSmileUserData() {
+      let mockData = []
       try {
         const { data } = await smileClockRandom()
         if (data.code == this.$global.successCode) {
           console.log(data.data)
-          var mockData = data.data
+          mockData = Array.isArray(data.data) ? data.data : []
         }
       } catch (error) {
         throw error
       }
-      return mockData.map((item) => ({
-        id: item.id,
-        avatar: this.$ip + item.avatar,
-        name: item.nickname,
-      }))
+      return mockData
+        .filter((item) => item && item.id !== undefined && item.id !== null && item.id !== "")
+        .map((item) => ({
+          id: item.id,
+          avatar: item.avatar ? this.$ip + item.avatar : this.defaultAvatar,
+          name: item.nickname,
+        }))
     },
 
     generateSmileUsers(avatarData = []) {
-      this.avatarPool = avatarData && avatarData.length ? avatarData : [{ avatar: this.defaultAvatar }]
+      this.avatarPool = avatarData && avatarData.length ? avatarData : []
       this.poolIndex = 0
-      const maxCount = Math.min(this.avatarPool.length, 15)
       this.smileUsers = []
+      this.recentQueue = []
+      if (!this.avatarPool.length) {
+        return
+      }
+      const maxCount = Math.min(this.avatarPool.length, 15)
       const container = {
         width: this.container.width,
         height: this.container.height,
@@ -315,6 +318,21 @@ export default {
       }
     },
 
+    openAvatarDetails(item) {
+      if (!item || item.detailId === undefined || item.detailId === null || item.detailId === "") {
+        this.$myMessage({
+          type: "font-error",
+          message: "暂无数据可查看!",
+        })
+        return
+      }
+      this.detailsId = item.detailId
+      this.shootDetailsShow = true
+      this.$nextTick(() => {
+        this.$refs.shootRef.getDetails()
+      })
+    },
+
     async openPopup(item) {
       if (item.className === "check") {
         this.shootShow = true
@@ -323,12 +341,18 @@ export default {
         this.$router.push("/smileCheck/statistics")
       }
       if (item.className === "random") {
-        if (!this.avatarPool || !this.avatarPool.length) {
-          this.$message.warning("暂无数据可查看")
+        const validPool = (this.avatarPool || []).filter(
+          (poolItem) => poolItem && poolItem.id !== undefined && poolItem.id !== null && poolItem.id !== "",
+        )
+        if (!validPool.length) {
+          this.$myMessage({
+            type: "font-error",
+            message: "暂无数据可查看!",
+          })
           return
         }
-        const randomIndex = Math.floor(Math.random() * this.avatarPool.length)
-        const randomItem = this.avatarPool[randomIndex]
+        const randomIndex = Math.floor(Math.random() * validPool.length)
+        const randomItem = validPool[randomIndex]
         this.detailsId = randomItem.id
         this.shootDetailsShow = true
         this.$nextTick(() => {

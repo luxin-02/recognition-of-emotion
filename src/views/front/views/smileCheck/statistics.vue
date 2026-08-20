@@ -209,7 +209,7 @@ export default {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background-image: url(@/assets/img/front/index/kuang.png);
+  background-image: url(@/assets/img/front/smileCheck/kuang.png);
   background-size: 100% 100%;
   box-sizing: border-box;
   padding: 160px 0 0 45px;

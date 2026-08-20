@@ -29,13 +29,9 @@
         </div>
       </div>
       <div class="middle">
-        <div class="title_text">面部识别</div>
+        <div class="title_text" style="left: 2.1rem">面部识别</div>
 
-        <Middle
-          @emotion-change="handleEmotionChange"
-          @report-add="handleReportAdd"
-          @lookReport="handleLookReport"
-        />
+        <Middle @emotion-change="handleEmotionChange" @report-add="handleReportAdd" @lookReport="handleLookReport" />
       </div>
       <div class="right">
         <div>
@@ -71,11 +67,7 @@
         <div>
           <div class="title_text">心理综合分析</div>
           <br />
-          <RightBottom
-            :psychologyData="psychologyData"
-            :positiveData="positiveData"
-            :negativeData="negativeData"
-          />
+          <RightBottom :psychologyData="psychologyData" :positiveData="positiveData" :negativeData="negativeData" />
         </div>
       </div>
     </div>
@@ -148,14 +140,10 @@ export default {
   },
   methods: {
     handleEmotionChange(payload) {
-      const {
-        leftValueData,
-        leftBottomValueData,
-        rightTopValueData,
-        ZMrightBottom,
-        FMrightBottom,
-        XLrightBottom,
-      } = payload
+      console.log(payload)
+
+      const { leftValueData, leftBottomValueData, rightTopValueData, ZMrightBottom, FMrightBottom, XLrightBottom } =
+        payload
 
       this.LeftTopValueData = leftValueData
       this.leftBottomValueData = leftBottomValueData
@@ -163,6 +151,8 @@ export default {
       this.psychologyData = XLrightBottom
       this.positiveData = ZMrightBottom
       this.negativeData = FMrightBottom
+
+      this.analysisData = payload.analysisData || createInitialAnalysisData()
     },
     resetDetectionData() {
       Object.assign(this, createInitialDetectionData())
@@ -198,7 +188,7 @@ export default {
       }
     },
     async handleReportAdd(analysisData) {
-      this.analysisData = analysisData
+      this.analysisData = analysisData || createInitialAnalysisData()
       const { data } = await addSmileAssess(this.createReportPayload())
 
       if (data.code == this.$global.successCode) {

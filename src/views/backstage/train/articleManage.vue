@@ -178,10 +178,10 @@
         <div class="label">图片标题:</div>
         <input type="text" v-model="editOrAddForm.title" />
       </div>
-      <!-- <div class="title-box">
+      <div class="title-box">
         <div class="label">文章作者:</div>
         <input type="text" v-model="editOrAddForm.author" />
-      </div> -->
+      </div>
       <div class="where_class">
         <div class="label">所属分类:</div>
         <selectVue

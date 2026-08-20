@@ -1,9 +1,7 @@
 <template>
   <div class="ph_wrap">
     <div class="index">
-      <div class="module_title"> 
-        心情记录 
-      </div>
+      <div class="module_title">心情记录</div>
 
       <div class="date_sele">
         <div>心情详情：</div>
@@ -22,14 +20,12 @@
       </div>
 
       <div class="analyse">
-        <div class="analyse_title">12月数据分析：</div>
+        <div class="analyse_title">
+          {{ dateTimestamp.split("-")[0] }}年{{ dateTimestamp.split("-")[1] }}月数据分析：
+        </div>
         <div class="left">
           <div class="_title">当月心情趋势：</div>
-          <div
-            ref="trendChart"
-            class="trendChart"
-            :style="{ transform: `scale(${scale})` }"
-          ></div>
+          <div ref="trendChart" class="trendChart" :style="{ transform: `scale(${scale})` }"></div>
         </div>
         <div class="right">
           <div class="_title">
@@ -39,27 +35,14 @@
               >天
             </p>
           </div>
-          <div ref="statistics" class="statistics"
-            :style="{ transform: `scale(${scale})` }"></div>
+          <div ref="statistics" class="statistics" :style="{ transform: `scale(${scale})` }"></div>
 
           <ul v-if="statisticsData.length > 0">
-            <li class="mood-1">
-              超开心 {{ statisticsData[0].num }}天
-              {{ statisticsData[0].ratio }}%
-            </li>
-            <li class="mood-2">
-              开心 {{ statisticsData[1].num }}天 {{ statisticsData[1].ratio }}%
-            </li>
-            <li class="mood-3">
-              还行 {{ statisticsData[2].num }}天 {{ statisticsData[2].ratio }}%
-            </li>
-            <li class="mood-4">
-              不开心 {{ statisticsData[3].num }}天
-              {{ statisticsData[3].ratio }}%
-            </li>
-            <li class="mood-5">
-              超烂 {{ statisticsData[4].num }}天 {{ statisticsData[4].ratio }}%
-            </li>
+            <li class="mood-1">超开心 {{ statisticsData[0].num }}天 {{ statisticsData[0].ratio }}%</li>
+            <li class="mood-2">开心 {{ statisticsData[1].num }}天 {{ statisticsData[1].ratio }}%</li>
+            <li class="mood-3">还行 {{ statisticsData[2].num }}天 {{ statisticsData[2].ratio }}%</li>
+            <li class="mood-4">不开心 {{ statisticsData[3].num }}天 {{ statisticsData[3].ratio }}%</li>
+            <li class="mood-5">超烂 {{ statisticsData[4].num }}天 {{ statisticsData[4].ratio }}%</li>
           </ul>
         </div>
       </div>
@@ -125,20 +108,19 @@ export default {
       }
     },
     trendChartFn(dayData, moodArray) {
+      console.log(moodArray)
+
       // const monthDays = Array.from({ length: 31 }, (_, i) => `${i + 1}日`)
 
       const getMoodImage = (moodValue) => {
         const moodImages = {
-          1: require("@/assets/img/front/clockIn/Emoji_超烂.png"), // 超烂
-          2: require("@/assets/img/front/clockIn/Emoji_不开心.png"), // 不开心
+          5: require("@/assets/img/front/clockIn/Emoji_超烂.png"), // 超烂
+          4: require("@/assets/img/front/clockIn/Emoji_不开心.png"), // 不开心
           3: require("@/assets/img/front/clockIn/Emoji_还行.png"), // 还行
-          4: require("@/assets/img/front/clockIn/Emoji_开心.png"), // 开心
-          5: require("@/assets/img/front/clockIn/Emoji_超开心.png"), // 超开心
+          2: require("@/assets/img/front/clockIn/Emoji_开心.png"), // 开心
+          1: require("@/assets/img/front/clockIn/Emoji_超开心.png"), // 超开心
         }
-        return (
-          moodImages[moodValue] ||
-          require("@/assets/img/front/clockIn/Emoji_超开心.png")
-        )
+        return moodImages[moodValue] || require("@/assets/img/front/clockIn/Emoji_超开心.png")
       }
       // 生成带图片的数据
       const generateDataWithImages = () => {
@@ -165,7 +147,7 @@ export default {
             type: "inside", // 内置型数据区域缩放
             xAxisIndex: 0, // 控制x轴
             start: 0, // 初始缩放开始位置
-            end: 40, // 初始缩放结束位置（显示前20天）
+            end: 80, // 初始缩放结束位置（显示前20天）
           },
         ],
         xAxis: {
@@ -175,6 +157,7 @@ export default {
             color: "#fff",
             interval: 0, // 显示所有标签
             // rotate: 45 // 标签旋转45度
+            margin: 15, // 调整标签与轴线的间距
           },
           axisTick: {
             show: false,
@@ -188,16 +171,17 @@ export default {
           min: 1, // 最小值1分
           max: 5, // 最大值5分
           interval: 1, // 间隔为1
+          inverse: true,
           axisLabel: {
             color: "#fff",
             formatter: function (value) {
               // 将数值转换为心情等级
               const moodMap = {
-                1: "超烂",
-                2: "不开心",
+                1: "超开心",
+                2: "开心",
                 3: "还行",
-                4: "开心",
-                5: "超开心",
+                4: "不开心",
+                5: "超烂",
               }
               return moodMap[value] || value
             },
@@ -429,14 +413,16 @@ export default {
           }
         }
         .trendChart {
+          /* prettier-ignore */
           width: 620PX;
+          /* prettier-ignore */
           height: 320PX;
           transform-origin: 0 0;
         }
 
         .statistics {
-          width: 250PX;
-          height: 250PX;
+          width: 250px;
+          height: 250px;
           margin: 35px 0 0 40px;
           transform-origin: 0 0;
         }

@@ -225,7 +225,7 @@ export default {
           },
           axisLabel: {
             textStyle: {
-              fontSize: 14,
+              fontSize: 10,
             },
           },
           minInterval: 1,

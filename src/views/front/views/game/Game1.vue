@@ -72,7 +72,7 @@
     <div class="open" v-if="isVisible">
       <div>
         <p>恭喜通关</p>
-        <div v-html="strText"></div>
+        <div v-html="strText" style="text-align: center;"></div>
       </div>
     </div>
   </div>

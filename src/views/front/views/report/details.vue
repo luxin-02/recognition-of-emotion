@@ -56,10 +56,7 @@
       <br />
 
       <template v-if="$route.query.type == '测评报告'">
-        <div
-          class="mk_title"
-          v-if="reportData.record_result && reportData.record_result.length > 1"
-        >
+        <div class="mk_title" v-if="reportData.record_result && reportData.record_result.length > 1">
           <i></i>报告分析
         </div>
         <br />
@@ -67,7 +64,6 @@
           v-if="reportData.record_result && reportData.record_result.length > 1"
           class="radarMap"
           ref="radarMap"
-          :style="{ transform: `scale(${scale})` }"
         ></div>
         <div class="mk_title"><i></i>报告结果</div>
         <div v-for="(item, i) in reportData.record_result" :key="i">
@@ -90,7 +86,7 @@
         </div>
         <div class="explain_text">
           <div v-for="(item, i) in reportData.record_result" :key="i">
-            <p>{{ item.gradeName }} - 得分：{{ item.scores }}</p>
+            <p>得分：{{ item.scores }}</p>
             <p v-html="item.degree"></p>
             <p v-html="item.result"></p>
             <!-- <p v-html="item.scores"></p> -->
@@ -132,9 +128,7 @@
 import { frontGaugeReportApiInfo } from "@/server/api/guage"
 import { reportApiInfo } from "@/server/api/report"
 import * as echarts from "echarts"
-import scaleMixin from "@/mixins/scaleMixin"
 export default {
-  mixins: [scaleMixin],
   data() {
     return {
       percentage: 50,
@@ -154,6 +148,7 @@ export default {
   },
   created() {},
   mounted() {
+    window.addEventListener("resize", this.resizeRadarMap)
     if (this.$route.query.type == "测评报告") {
       this.getGaugeInfo()
     } else {
@@ -277,13 +272,24 @@ export default {
 
       option && this.radarMapChart.setOption(option)
     },
+    resizeRadarMap() {
+      if (this.radarMapChart) {
+        this.radarMapChart.resize()
+      }
+    },
     toRecommend(item) {
       this.$router.push({
         path: item.route,
       })
     },
   },
-  beforeDestroy() {},
+  beforeDestroy() {
+    window.removeEventListener("resize", this.resizeRadarMap)
+    if (this.radarMapChart) {
+      this.radarMapChart.dispose()
+      this.radarMapChart = null
+    }
+  },
 }
 </script>
 
@@ -294,7 +300,9 @@ export default {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  margin-left: -790px;
+  margin-top: -436px;
+  // transform: translate(-50%, -50%);
   background-image: url(@/assets/img/front/index/kuang.png);
   background-size: 100% 100%;
   box-sizing: border-box;
@@ -385,10 +393,11 @@ export default {
       }
     }
     .radarMap {
-      width: 1000px;
-      height: 500px;
+      width: 100%;
+      max-width: 1000px;
+      aspect-ratio: 2 / 1;
+      height: auto;
       margin: 0 auto;
-      transform-origin: 0 0;
     }
     .explain_text {
       font-size: 18px;

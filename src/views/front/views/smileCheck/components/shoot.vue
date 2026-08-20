@@ -4,18 +4,26 @@
       <div class="shoot_wrap">
         <div class="title">微笑打卡</div>
         <div class="ph_wrap">
+          <video
+            ref="videoRef"
+            v-show="currentState === 'shooting'"
+            class="faceImg face-video"
+            autoplay
+            muted
+            playsinline
+          ></video>
           <canvas
             ref="faceCanvas"
-            class="faceImg"
-            :style="{
-              transform: ' rotateY(180deg)',
-              display: currentState !== 'ready' ? 'block' : 'none',
-            }"
+            class="capture-canvas"
           ></canvas>
+          <div v-if="cameraLoading" class="camera-loading">
+            <div class="loading-ring"></div>
+            <div class="loading-title">{{ cameraLoadingText }}</div>
+          </div>
           <img
-            v-show="currentState === 'ready'"
+            v-show="currentState !== 'shooting'"
             :src="
-              currentState === 'analyzed' && capturedImage
+              capturedImage
                 ? capturedImage
                 : require('@/assets/img/front/detection/默认.png')
             "
@@ -85,14 +93,18 @@
 </template>
 
 <script>
-import { createCanvasLoading } from "@/mixins/shoot/util.js"
 import { fileApiImage } from "@/server/api/file"
 import { base64ToFile } from "@/components/backstage/imgCutting/imgCutting.js"
 import { addSmileClock } from "@/server/api/smileCheck"
+
+const CAMERA_SIZE = {
+  width: 500,
+  height: 450,
+}
+
 export default {
   data() {
     return {
-      faceCore: null,
       isShow: false,
       analysisTimer: null,
       analysisData: {
@@ -105,7 +117,10 @@ export default {
       currentState: "ready",
       canvas: null,
       ctx: null,
-      loading: null,
+      video: null,
+      cameraStream: null,
+      cameraLoading: false,
+      cameraLoadingText: "正在启动摄像头...",
       capturedImage: null,
     }
   },
@@ -142,46 +157,88 @@ export default {
     })
   },
   methods: {
-    render(e) {
-      if (this.loading) {
-        this.loading.stop()
-        this.loading = null
-      }
-      const frameData = e.detail.frameData
-      const blob = new Blob([new Uint8Array(frameData)], { type: "image/jpeg" })
-      const img = new Image()
-      img.onload = () => {
-        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
-        URL.revokeObjectURL(img.src)
-      }
-      img.src = URL.createObjectURL(blob)
-    },
-
     // 拍摄
-    startCheck() {
+    async startCheck() {
       try {
-        this.openCamera()
+        await this.openCamera()
       } catch (e) {
-        console.log(e)
+        console.error(e)
+        this.$myMessage.error("摄像头打开失败，请检查权限或设备")
+        this.currentState = "ready"
+        this.closeCamera()
       }
     },
     // 打开摄像头
-    openCamera() {
+    async openCamera() {
       this.capturedImage = null
-      this.loading = createCanvasLoading(this.canvas, {
-        color: "#3498db", // 动画颜色
-        radius: 25, // 半径
-        lineWidth: 8, // 线条宽度
-        speed: 2, // 旋转速度
+      this.ensureCameraRefs()
+      this.closeCamera()
+
+      this.cameraLoading = true
+      this.cameraLoadingText = "正在请求摄像头权限..."
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Current browser does not support getUserMedia")
+      }
+
+      this.cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user",
+        },
+        audio: false,
       })
-      this.loading.start()
-      window.addEventListener("videoFrameEvent", this.render)
-      CameraProcessor.StartCamera(true)
+
+      this.cameraLoadingText = "正在启动摄像头画面..."
+      this.video.srcObject = this.cameraStream
+      await this.waitForVideoReady(this.video)
+      await this.video.play()
+      this.cameraLoading = false
     },
     // 手动停止
     closeCamera() {
-      window.removeEventListener("videoFrameEvent", this.render)
-      CameraProcessor.StopCamera()
+      this.cameraLoading = false
+
+      if (this.cameraStream) {
+        this.cameraStream.getTracks().forEach((track) => track.stop())
+        this.cameraStream = null
+      }
+
+      if (this.video) {
+        this.video.pause()
+        this.video.srcObject = null
+      }
+    },
+    ensureCameraRefs() {
+      this.canvas = this.$refs.faceCanvas
+      this.video = this.$refs.videoRef
+      this.ctx = this.canvas && this.canvas.getContext("2d")
+
+      if (!this.canvas || !this.video || !this.ctx) {
+        throw new Error("Camera view is not ready")
+      }
+    },
+    waitForVideoReady(video) {
+      if (video.readyState >= 2) return Promise.resolve()
+
+      return new Promise((resolve, reject) => {
+        const cleanup = () => {
+          video.removeEventListener("loadedmetadata", onReady)
+          video.removeEventListener("error", onError)
+        }
+        const onReady = () => {
+          cleanup()
+          resolve()
+        }
+        const onError = () => {
+          cleanup()
+          reject(new Error("Video metadata failed to load"))
+        }
+
+        video.addEventListener("loadedmetadata", onReady)
+        video.addEventListener("error", onError)
+      })
     },
     // 判断状态是否显示对应的UI组件
     isStateVisible(state) {
@@ -225,14 +282,16 @@ export default {
       }
     },
     cancel() {
-      if (this.loading) return
+      this.clearAnalysisTimer()
+      this.closeCamera()
       this.isShow = false
       this.$emit("update:show", false)
       this.currentState = "ready"
       this.capturedImage = null
-      this.closeCamera()
     },
     rePhoto() {
+      this.clearAnalysisTimer()
+      this.closeCamera()
       this.currentState = "ready"
       this.capturedImage = null
       this.analysisData = {
@@ -242,21 +301,71 @@ export default {
         mentalAbility: 0,
       }
     },
+    clearAnalysisTimer() {
+      if (this.analysisTimer) {
+        clearTimeout(this.analysisTimer)
+        this.analysisTimer = null
+      }
+    },
     // 拍照并切换到分析完成状态
     captureAndAnalyze() {
-      if (this.loading) return
-      if (this.canvas && this.ctx) {
-        // 将 canvas 内容转换为图片数据
-        if (this.$refs.audio) {
-          this.$refs.audio.play()
-        }
-        this.capturedImage = this.canvas.toDataURL("image/jpeg")
+      if (this.cameraLoading) return
+      this.ensureCameraRefs()
+
+      if (this.$refs.audio) {
+        this.$refs.audio.play()
       }
+
+      this.canvas.width = CAMERA_SIZE.width
+      this.canvas.height = CAMERA_SIZE.height
+      const drawParams = this.getCoverDrawParams()
+      this.ctx.save()
+      this.ctx.translate(CAMERA_SIZE.width, 0)
+      this.ctx.scale(-1, 1)
+      this.ctx.drawImage(
+        this.video,
+        drawParams.sx,
+        drawParams.sy,
+        drawParams.sw,
+        drawParams.sh,
+        0,
+        0,
+        CAMERA_SIZE.width,
+        CAMERA_SIZE.height
+      )
+      this.ctx.restore()
+      this.capturedImage = this.canvas.toDataURL("image/jpeg")
+
       this.closeCamera()
       // 切换状态: 分析照片
       this.currentState = "shot"
     },
+    getCoverDrawParams() {
+      const videoWidth = this.video.videoWidth || CAMERA_SIZE.width
+      const videoHeight = this.video.videoHeight || CAMERA_SIZE.height
+      const targetRatio = CAMERA_SIZE.width / CAMERA_SIZE.height
+      const videoRatio = videoWidth / videoHeight
+
+      if (videoRatio > targetRatio) {
+        const sw = videoHeight * targetRatio
+        return {
+          sx: (videoWidth - sw) / 2,
+          sy: 0,
+          sw,
+          sh: videoHeight,
+        }
+      }
+
+      const sh = videoWidth / targetRatio
+      return {
+        sx: 0,
+        sy: (videoHeight - sh) / 2,
+        sw: videoWidth,
+        sh,
+      }
+    },
     analyzePhoto() {
+      this.clearAnalysisTimer()
       this.currentState = "analyzing"
       const randomScore = () => Math.floor(Math.random() * 76) + 20
       this.analysisData = {
@@ -265,7 +374,7 @@ export default {
         negativeEmotion: randomScore(),
         mentalAbility: randomScore(),
       }
-      setTimeout(() => {
+      this.analysisTimer = setTimeout(() => {
         this.currentState = "analyzed"
       }, 10000)
     },
@@ -290,6 +399,7 @@ export default {
                 type: "font-success",
                 message: "发布成功!",
               })
+              this.$emit("published")
               this.cancel()
             }
           }
@@ -305,17 +415,19 @@ export default {
       if (this.isShow) {
         this.$nextTick(() => {
           this.canvas = this.$refs.faceCanvas
-          if (this.canvas) {
-            this.ctx = this.canvas.getContext("2d")
-            console.log("Canvas 初始化成功")
-          } else {
-            console.error("Canvas 元素未找到")
-          }
+          this.video = this.$refs.videoRef
+          this.ctx = this.canvas && this.canvas.getContext("2d")
         })
+      } else {
+        this.clearAnalysisTimer()
+        this.closeCamera()
       }
     },
   },
-  beforeDestroy() {},
+  beforeDestroy() {
+    this.clearAnalysisTimer()
+    this.closeCamera()
+  },
 }
 </script>
 
@@ -354,6 +466,8 @@ export default {
       height: 488px;
       background-image: url(@/assets/img/front/smileCheck/头像框.png);
       background-size: 100% 100%;
+      position: relative;
+      overflow: hidden;
       margin: 0 auto;
       padding: 19px 0 0 19px;
       box-sizing: border-box;
@@ -366,6 +480,51 @@ export default {
         width: 500px;
         height: 450px;
         border-radius: 23px;
+      }
+      .face-video {
+        position: absolute;
+        left: 19px;
+        top: 19px;
+        object-fit: cover;
+        transform: rotateY(180deg);
+        background: #ffffff;
+      }
+      .capture-canvas {
+        display: none;
+      }
+      .camera-loading {
+        position: absolute;
+        left: 19px;
+        top: 19px;
+        z-index: 2;
+        width: 500px;
+        height: 450px;
+        border-radius: 23px;
+        background: rgba(2, 12, 36, 0.82);
+        box-shadow: inset 0 0 34px rgba(0, 212, 255, 0.35);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        pointer-events: none;
+      }
+      .loading-ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 4px solid rgba(0, 212, 255, 0.18);
+        border-top-color: #00d4ff;
+        border-right-color: #10e8aa;
+        animation: cameraLoadingSpin 1s linear infinite;
+        box-shadow: 0 0 28px rgba(0, 212, 255, 0.45);
+      }
+      .loading-title {
+        margin-top: 22px;
+        font-size: 20px;
+        font-family: "ziyuanyuanti600W";
+        color: #dff7ff;
+        text-shadow: 0 0 12px rgba(0, 212, 255, 0.7);
       }
     }
     .tips_text {
@@ -555,6 +714,12 @@ export default {
 
   .popup-box {
     transform: scale(0, 0);
+  }
+}
+
+@keyframes cameraLoadingSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

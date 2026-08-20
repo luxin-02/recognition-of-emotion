@@ -54,7 +54,7 @@
         <br />
 
         <div class="mk_title"><i></i>报告结果</div>
-        <div class="report_score" v-if="reportData.image_analysis">
+        <div class="report_score" v-if="reportData.image_analysis && reportData.image_analysis.name">
           <div class="instrument">
             <div class="fenshu">{{ reportData.image_analysis.value[0] }}<i>分</i></div>
             <div class="zhpf">{{ reportData.image_analysis.name[0] }}</div>
@@ -82,7 +82,7 @@
         <br />
 
         <!-- ----------- -->
-        <template v-if="reportData.negative">
+        <template v-if="reportData.negative && reportData.negative.name">
           <br />
           <div class="mk_title"><i></i>负面情绪分析</div>
           <img id="radarMap" :src="chartImg" alt="" />
@@ -117,7 +117,7 @@
         <br />
 
         <!-- ----------- -->
-        <template>
+        <template v-if="reportData.image_analysis && reportData.image_analysis.name">
           <div class="mk_title"><i></i>正面情绪分析</div>
           <img id="roseChart" :src="emotionChartImg1" alt="" />
           <div v-if="false">
