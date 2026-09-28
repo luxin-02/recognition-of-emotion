@@ -20,7 +20,7 @@
             <div class="shoot_info">
               <div>
                 <p>微笑指数</p>
-                <i>{{ showScore(detailData && detailData.smile_index) }}</i>
+                <i>{{ showSmileScore(detailData && detailData.smile_index) }}</i>
               </div>
               <div>
                 <p>正面情绪</p>
@@ -38,8 +38,13 @@
             <div class="resemblance">
               <div class="resemblance_title"><i></i>相似笑容：</div>
               <div class="resemblance_ph">
-                <div v-for="(item, index) in resemblanceImages" :key="index">
-                  <img v-if="item" :src="item" />
+                <div
+                  v-for="(item, index) in resemblanceItems"
+                  :key="item.id || item.image || index"
+                  :class="{ similar_clickable: item.id }"
+                  @click="openSimilarDetails(item)"
+                >
+                  <img v-if="item.image" :src="item.image" />
                 </div>
               </div>
             </div>
@@ -58,6 +63,7 @@
 
 <script>
 import { smileClockDetail, likeSmileClock } from "@/server/api/smileCheck"
+import { clampSmileIndex } from "@/utils/positiveEmotionScore"
 export default {
   data() {
     return {
@@ -86,10 +92,16 @@ export default {
       const detailData = this.detailData || {}
       return this.getImageUrl(detailData.image || detailData.avatar)
     },
-    resemblanceImages() {
+    resemblanceItems() {
       const detailData = this.detailData || {}
       const list = detailData.similar_list || []
-      return list.slice(0, 4).map((item) => this.getImageUrl(item.image || item))
+      return list.slice(0, 4).map((item) => {
+        const record = item && typeof item === "object" ? item : { image: item }
+        return {
+          id: record.id || record.smile_clock_id || record.clock_id || record.record_id,
+          image: this.getImageUrl(record.image || record.avatar),
+        }
+      })
     },
     isLiked() {
       const detailData = this.detailData || {}
@@ -105,17 +117,27 @@ export default {
       this.detailData = null
     },
 
-    async getDetails() {
-      if (this.detailsId === undefined || this.detailsId === null || this.detailsId === "") {
+    async getDetails(id = this.detailsId) {
+      if (id === undefined || id === null || id === "") {
         this.cancel()
         return
       }
       const { data } = await smileClockDetail({
-        id: this.detailsId,
+        id,
       })
       if (data.code == this.$global.successCode) {
         this.detailData = data.data
       }
+    },
+    openSimilarDetails(item) {
+      if (!item || item.id === undefined || item.id === null || item.id === "") {
+        this.$myMessage({
+          type: "font-error",
+          message: "相似笑容缺少打卡编号，暂时无法查看详情",
+        })
+        return
+      }
+      this.getDetails(item.id)
     },
     async handleLike() {
       if (!this.detailData || this.likeLoading) {
@@ -161,6 +183,10 @@ export default {
     },
     showScore(value) {
       return `${this.showText(value)}分`
+    },
+    showSmileScore(value) {
+      if (value === undefined || value === null || value === "") return "--"
+      return `${clampSmileIndex(value)}分`
     },
   },
   watch: {
@@ -332,6 +358,13 @@ export default {
               background-size: 100% 100%;
               padding: 13px 0 0 15px;
               box-sizing: border-box;
+              &.similar_clickable {
+                cursor: pointer;
+
+                &:hover > img {
+                  transform: scale(1.08);
+                }
+              }
               &:nth-child(2n) {
                 background-image: url(@/assets/img/front/smileCheck/气泡2.png);
               }
@@ -339,6 +372,7 @@ export default {
                 width: 73px;
                 height: 73px;
                 border-radius: 50px;
+                transition: transform 0.2s ease;
               }
             }
           }

@@ -273,6 +273,7 @@ import {
 } from "./composables/usePanelData.js"
 
 const MODEL_URL = "/models"
+const NO_FACE_TIMEOUT = 2000
 
 function createInitialExpressions() {
   return {
@@ -297,6 +298,7 @@ export default {
       error: "",
       modelsLoaded: false,
       animationId: null,
+      noFaceSince: null,
       lastPanelPrintAt: 0,
       expressions: createInitialExpressions(),
       emotionData: getEmotionInfo(null),
@@ -488,6 +490,7 @@ export default {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
 
           if (detections) {
+            this.noFaceSince = null
             const resized = faceapi.resizeResults(detections, displaySize)
 
             if (resized.expressions) {
@@ -508,19 +511,40 @@ export default {
               lineWidth: 2,
             })
             drawBox.draw(canvas)
+          } else {
+            this.handleMissingFace()
           }
         } catch (detectError) {
           this.error = "情绪识别运行异常，请刷新页面后重试。"
           console.error(detectError)
         }
 
-        this.animationId = requestAnimationFrame(detectFrame)
+        if (this.cameraReady) {
+          this.animationId = requestAnimationFrame(detectFrame)
+        }
       }
 
       detectFrame()
     },
+    handleMissingFace() {
+      if (this.noFaceSince === null) {
+        this.noFaceSince = Date.now()
+        return
+      }
+
+      if (Date.now() - this.noFaceSince < NO_FACE_TIMEOUT) return
+
+      this.stopCamera()
+      const message = "未识别到人脸，情绪检测已中止，请调整位置后重试"
+      if (this.$myMessage && typeof this.$myMessage.error === "function") {
+        this.$myMessage.error(message, 2500)
+      } else {
+        alert(message)
+      }
+    },
     stopCamera() {
       this.cameraReady = false
+      this.noFaceSince = null
       this.resetPanelData()
       const compositeResult = this.compositeTracker.reset()
       this.compositeScores = compositeResult.scores

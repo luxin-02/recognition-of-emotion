@@ -140,22 +140,25 @@ export default {
   },
   methods: {
     handleEmotionChange(payload) {
-      console.log(payload)
+      if (!payload) return
 
       const { leftValueData, leftBottomValueData, rightTopValueData, ZMrightBottom, FMrightBottom, XLrightBottom } =
         payload
 
-      this.LeftTopValueData = leftValueData
-      this.leftBottomValueData = leftBottomValueData
-      this.rightTopValueData = rightTopValueData
-      this.psychologyData = XLrightBottom
-      this.positiveData = ZMrightBottom
-      this.negativeData = FMrightBottom
+      this.LeftTopValueData = Array.isArray(leftValueData) ? [...leftValueData] : createZeroArray(NEGATIVE_NAMES.length)
+      this.leftBottomValueData = Array.isArray(leftBottomValueData)
+        ? [...leftBottomValueData]
+        : createZeroArray(MENTAL_ABILITY_NAMES.length)
+      this.rightTopValueData = Array.isArray(rightTopValueData)
+        ? rightTopValueData.map((item) => ({ ...item }))
+        : createRightTopData()
+      this.psychologyData = Array.isArray(XLrightBottom) ? [...XLrightBottom] : createZeroArray(12)
+      this.positiveData = Array.isArray(ZMrightBottom) ? [...ZMrightBottom] : createZeroArray(12)
+      this.negativeData = Array.isArray(FMrightBottom) ? [...FMrightBottom] : createZeroArray(12)
 
-      this.analysisData = payload.analysisData || createInitialAnalysisData()
-    },
-    resetDetectionData() {
-      Object.assign(this, createInitialDetectionData())
+      this.analysisData = payload.analysisData
+        ? { ...payload.analysisData }
+        : createInitialAnalysisData()
     },
     createReportPayload() {
       return {
@@ -169,27 +172,32 @@ export default {
           ],
         },
         comprehensive: [
-          { name: TREND_NAMES.psychology, value: this.psychologyData },
-          { name: TREND_NAMES.positive, value: this.positiveData },
-          { name: TREND_NAMES.negative, value: this.negativeData },
+          { name: TREND_NAMES.psychology, value: [...this.psychologyData] },
+          { name: TREND_NAMES.positive, value: [...this.positiveData] },
+          { name: TREND_NAMES.negative, value: [...this.negativeData] },
         ],
         negative: {
           name: NEGATIVE_NAMES,
-          value: this.LeftTopValueData,
+          value: [...this.LeftTopValueData],
         },
         positive: {
           name: RIGHT_TOP_NAMES,
-          value: this.rightTopValueData,
+          value: this.rightTopValueData.map((item) => ({ ...item })),
         },
         mental_ability: {
           name: MENTAL_ABILITY_NAMES,
-          value: this.leftBottomValueData,
+          value: [...this.leftBottomValueData],
         },
       }
     },
-    async handleReportAdd(analysisData) {
-      this.analysisData = analysisData || createInitialAnalysisData()
-      const { data } = await addSmileAssess(this.createReportPayload())
+    async handleReportAdd(payload) {
+      if (payload && Array.isArray(payload.leftValueData)) {
+        this.handleEmotionChange(payload)
+      } else {
+        this.analysisData = payload ? { ...payload } : createInitialAnalysisData()
+      }
+      const reportPayload = this.createReportPayload()
+      const { data } = await addSmileAssess(reportPayload)
 
       if (data.code == this.$global.successCode) {
         this.$myMessage({
@@ -197,7 +205,6 @@ export default {
           message: data.msg,
         })
         this.detailsId = data.data.id
-        this.resetDetectionData()
       }
     },
 

@@ -2,7 +2,7 @@
   <div class="report_details">
     <div class="module_title">报告详情</div>
 
-    <div class="class_title">心理评估分析报告</div>
+    <div class="class_title">{{ reportTitle }}</div>
     <div class="content_wrap">
       <div class="mk_title"><i></i>基本信息</div>
       <div class="user_info">
@@ -145,6 +145,15 @@ export default {
       detailsLoading: false,
       reportData: "",
     }
+  },
+  computed: {
+    reportTitle() {
+      return this.$route.query.type === "心理训练"
+        ? "心理训练分析报告"
+        : this.$route.query.type === "测评报告"
+        ? "心理评估分析报告"
+        : "情绪检测分析报告"
+    },
   },
   created() {},
   mounted() {

@@ -1,7 +1,7 @@
 <template>
   <print-box ref="print_box">
     <div class="wrap" ref="targetHtml">
-      <div class="class_title">心理评估分析报告</div>
+      <div class="class_title">情绪检测分析报告</div>
       <div class="content_wrap">
         <div class="mk_title"><i></i>基本信息</div>
         <div class="user_info">
@@ -531,7 +531,7 @@ export default {
             color: #ffffff;
           }
           > .text2 {
-            font-size: 40px;
+            font-size: 32px;
             font-family: "ziyuanyuanti600W";
             text-align: center;
             color: #fff;

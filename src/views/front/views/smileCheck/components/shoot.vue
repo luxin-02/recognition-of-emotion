@@ -93,14 +93,17 @@
 </template>
 
 <script>
+import * as faceapi from "face-api.js"
 import { fileApiImage } from "@/server/api/file"
 import { base64ToFile } from "@/components/backstage/imgCutting/imgCutting.js"
 import { addSmileClock } from "@/server/api/smileCheck"
+import { getNegativeEmotionScore, getSmileCheckEmotionScore, getSmileIndex } from "@/utils/positiveEmotionScore"
 
 const CAMERA_SIZE = {
   width: 500,
   height: 450,
 }
+const MODEL_URL = "/models"
 
 export default {
   data() {
@@ -122,6 +125,8 @@ export default {
       cameraLoading: false,
       cameraLoadingText: "正在启动摄像头...",
       capturedImage: null,
+      capturedExpressions: null,
+      faceModelsLoaded: false,
     }
   },
   props: {
@@ -171,6 +176,7 @@ export default {
     // 打开摄像头
     async openCamera() {
       this.capturedImage = null
+      this.capturedExpressions = null
       this.ensureCameraRefs()
       this.closeCamera()
 
@@ -288,12 +294,14 @@ export default {
       this.$emit("update:show", false)
       this.currentState = "ready"
       this.capturedImage = null
+      this.capturedExpressions = null
     },
     rePhoto() {
       this.clearAnalysisTimer()
       this.closeCamera()
       this.currentState = "ready"
       this.capturedImage = null
+      this.capturedExpressions = null
       this.analysisData = {
         smileIndex: 0,
         positiveEmotion: 0,
@@ -308,9 +316,20 @@ export default {
       }
     },
     // 拍照并切换到分析完成状态
-    captureAndAnalyze() {
+    async captureAndAnalyze() {
       if (this.cameraLoading) return
       this.ensureCameraRefs()
+
+      this.cameraLoading = true
+      this.cameraLoadingText = "正在识别人脸..."
+      const detection = await this.detectFace()
+      this.cameraLoading = false
+      if (!detection) {
+        this.closeCamera()
+        this.currentState = "ready"
+        this.$myMessage.error("未识别到人脸，拍摄已中止，请调整位置后重试", 2500)
+        return
+      }
 
       if (this.$refs.audio) {
         this.$refs.audio.play()
@@ -335,10 +354,32 @@ export default {
       )
       this.ctx.restore()
       this.capturedImage = this.canvas.toDataURL("image/jpeg")
+      this.capturedExpressions = detection.expressions || null
 
       this.closeCamera()
       // 切换状态: 分析照片
       this.currentState = "shot"
+    },
+    async detectFace() {
+      try {
+        if (!this.faceModelsLoaded) {
+          await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
+          await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+          this.faceModelsLoaded = true
+        }
+        return await faceapi
+          .detectSingleFace(
+            this.video,
+            new faceapi.TinyFaceDetectorOptions({
+              inputSize: 224,
+              scoreThreshold: 0.45,
+            }),
+          )
+          .withFaceExpressions()
+      } catch (error) {
+        console.error("Face detection failed", error)
+        return null
+      }
     },
     getCoverDrawParams() {
       const videoWidth = this.video.videoWidth || CAMERA_SIZE.width
@@ -367,12 +408,17 @@ export default {
     analyzePhoto() {
       this.clearAnalysisTimer()
       this.currentState = "analyzing"
-      const randomScore = () => Math.floor(Math.random() * 76) + 20
+      const smileIndex = getSmileIndex(this.capturedExpressions && this.capturedExpressions.happy)
+      const positiveEmotion = getSmileCheckEmotionScore(smileIndex)
+      let mentalAbility = getSmileCheckEmotionScore(smileIndex)
+      if (mentalAbility === positiveEmotion) {
+        mentalAbility = mentalAbility >= 100 ? mentalAbility - 1 : mentalAbility + 1
+      }
       this.analysisData = {
-        smileIndex: randomScore(),
-        positiveEmotion: randomScore(),
-        negativeEmotion: randomScore(),
-        mentalAbility: randomScore(),
+        smileIndex,
+        positiveEmotion,
+        negativeEmotion: getNegativeEmotionScore(smileIndex),
+        mentalAbility,
       }
       this.analysisTimer = setTimeout(() => {
         this.currentState = "analyzed"

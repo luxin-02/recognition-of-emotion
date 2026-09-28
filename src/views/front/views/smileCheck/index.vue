@@ -1,14 +1,23 @@
 <template>
   <div class="smile_check">
-    <div class="star_field" ref="starField">
-      <div
-        v-for="item in smileUsers"
-        :key="item.id"
-        :class="['avatar_dot', { visible: item.visible }]"
-        :style="avatarStyle(item)"
-        @click="openAvatarDetails(item)"
-      >
-        <img :src="item.avatar" />
+    <div
+      class="star_field"
+      ref="starField"
+      :class="{ dragging: isDragging }"
+      @mousedown="onMouseDown"
+      @touchstart="onTouchStart"
+    >
+      <div class="sphere" ref="sphere">
+        <div
+          v-for="item in smileUsers"
+          :key="item.id"
+          ref="dots"
+          :class="['avatar_dot', item.bubbleClass]"
+          :style="avatarStyle(item)"
+          @click="openAvatarDetails(item)"
+        >
+          <img :src="item.avatar" draggable="false" />
+        </div>
       </div>
     </div>
 
@@ -26,7 +35,7 @@
 <script>
 import shoot from "./components/shoot.vue"
 import shootDetails from "./components/shootDetails.vue"
-import { smileClockRandom, deleteSmileClock } from "@/server/api/smileCheck"
+import { smileClockRandom } from "@/server/api/smileCheck"
 
 export default {
   components: {
@@ -41,19 +50,28 @@ export default {
         { name: "微笑打卡", className: "check" },
         { name: "随机查看", className: "random" },
       ],
-      swapIntervalId: null,
       defaultAvatar: null,
       avatarPool: [],
-      poolIndex: 0,
-      recentQueue: [],
-      recentMax: 12,
-      retryLimit: 60,
+      // 球面最多展示头像数：超过则随机抽取，避免重叠过密和性能下降
+      maxAvatars: 120,
       container: {
         width: 900,
         height: 600,
-        cx: 450,
-        cy: 300,
       },
+      sphereRadius: 220,
+      baseAvatarSize: 56,
+      // 球体当前旋转角度（弧度）
+      rotation: { x: 0, y: 0 },
+      // 松手后的惯性速度
+      velocity: { x: 0, y: 0 },
+      isDragging: false,
+      dragMoved: false,
+      suppressMouse: false,
+      dragLast: { x: 0, y: 0 },
+      dragSensitivity: 0.005,
+      autoRotateSpeed: 0.0025,
+      inertiaDamping: 0.95,
+      rafId: null,
       shootShow: false,
       shootDetailsShow: false,
       detailsId: null,
@@ -63,15 +81,15 @@ export default {
     await this.$nextTick()
     this.updateContainerConfig()
     await this.initSmileUsers()
-    this.startAvatarSwap()
+    this.startAnimation()
     window.addEventListener("resize", this.onResize)
+    document.addEventListener("visibilitychange", this.onVisibilityChange)
   },
   beforeDestroy() {
-    if (this.swapIntervalId) {
-      clearInterval(this.swapIntervalId)
-      this.swapIntervalId = null
-    }
+    this.stopAnimation()
     window.removeEventListener("resize", this.onResize)
+    document.removeEventListener("visibilitychange", this.onVisibilityChange)
+    this.removeDragListeners()
   },
 
   methods: {
@@ -94,8 +112,6 @@ export default {
       return {
         width: rect.width,
         height: rect.height,
-        cx: rect.width / 2,
-        cy: rect.height / 2,
       }
     },
 
@@ -104,13 +120,11 @@ export default {
       if (rect && rect.width > 0 && rect.height > 0) {
         this.container = rect
       } else {
-        this.container = {
-          width: 900,
-          height: 600,
-          cx: 450,
-          cy: 300,
-        }
+        this.container = { width: 900, height: 600 }
       }
+      const minDim = Math.min(this.container.width, this.container.height)
+      this.sphereRadius = minDim * 0.44
+      this.baseAvatarSize = Math.max(40, Math.min(64, minDim * 0.085))
     },
 
     onResize() {
@@ -127,198 +141,302 @@ export default {
       try {
         const { data } = await smileClockRandom()
         if (data.code == this.$global.successCode) {
-          console.log(data.data)
           mockData = Array.isArray(data.data) ? data.data : []
         }
       } catch (error) {
         throw error
       }
+
+      // TODO: 临时假数据 START —— 页面调整完后删除此段
+      // const localAvatars = [
+      //   require("@/assets/img/userAvatar/1.png"),
+      //   require("@/assets/img/userAvatar/2.png"),
+      //   require("@/assets/img/userAvatar/3.png"),
+      //   require("@/assets/img/userAvatar/4.png"),
+      //   require("@/assets/img/userAvatar/5.png"),
+      //   require("@/assets/img/userAvatar/6.png"),
+      // ]
+      // const mockNames = [
+      //   "笑笑",
+      //   "阳光",
+      //   "甜甜",
+      //   "阿橙",
+      //   "小鱼",
+      //   "豆豆",
+      //   "木木",
+      //   "糖糖",
+      //   "星星",
+      //   "阿狸",
+      //   "果果",
+      //   "团团",
+      //   "奶茶",
+      //   "布丁",
+      //   "柠檬",
+      //   "小熊",
+      //   "小鹿",
+      //   "小兔",
+      //   "小猫",
+      //   "小狗",
+      //   "小猪",
+      //   "笑笑",
+      //   "阳光",
+      //   "甜甜",
+      //   "阿橙",
+      //   "小鱼",
+      //   "豆豆",
+      //   "木木",
+      //   "糖糖",
+      // ]
+      // console.log(mockNames.length, "mockNames.length")
+
+      // const fakeData = mockNames.map((name, index) => ({
+      //   id: -(index + 1),
+      //   avatar: localAvatars[index % localAvatars.length],
+      //   name,
+      // }))
+      // TODO: 临时假数据 END
+
       return mockData
         .filter((item) => item && item.id !== undefined && item.id !== null && item.id !== "")
         .map((item) => ({
           id: item.id,
-          avatar: item.avatar ? this.$ip + item.avatar : this.defaultAvatar,
+          // 球体头像使用本次微笑打卡的照片，历史数据没有照片时再回退到用户头像。
+          avatar: this.getImageUrl(item.image || item.avatar),
           name: item.nickname,
         }))
+      // TODO: 临时假数据 —— 页面调整完后删除此段
+      // .concat(fakeData)
+      // TODO: 临时假数据 —— 页面调整完后删除此句
     },
 
+    getImageUrl(url) {
+      if (!url) return this.defaultAvatar
+      if (/^(https?:)?\/\//.test(url) || /^data:/.test(url)) return url
+      return this.$ip + url
+    },
+
+    // 根据头像数量分档：数量越少头像越大
+    getAvatarSize(count) {
+      const tiers = [
+        { max: 30, scale: 1 },
+        { max: 50, scale: 0.78 },
+        { max: 65, scale: 0.64 },
+        { max: 80, scale: 0.56 },
+        { max: 100, scale: 0.4 },
+      ]
+      // 默认取最后一档（最小），新增档位后自动生效
+      let scale = tiers[tiers.length - 1].scale
+      for (let i = 0; i < tiers.length; i += 1) {
+        if (count <= tiers[i].max) {
+          scale = tiers[i].scale
+          break
+        }
+      }
+      return Math.max(20, Math.round(this.baseAvatarSize * scale))
+    },
+
+    // Fibonacci 球面均匀分布
     generateSmileUsers(avatarData = []) {
-      this.avatarPool = avatarData && avatarData.length ? avatarData : []
-      this.poolIndex = 0
-      this.smileUsers = []
-      this.recentQueue = []
-      if (!this.avatarPool.length) {
+      this.avatarPool = Array.isArray(avatarData) ? avatarData : []
+      let users = this.avatarPool.slice()
+
+      if (users.length > this.maxAvatars) {
+        // Fisher-Yates 洗牌后取前 maxAvatars 个
+        for (let i = users.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[users[i], users[j]] = [users[j], users[i]]
+        }
+        users = users.slice(0, this.maxAvatars)
+      }
+
+      const N = users.length
+      const R = this.sphereRadius
+      // 分档依据：整个池子的数据总条数，而非截取后的展示数量
+      const size = this.getAvatarSize(this.avatarPool.length)
+      const goldenAngle = Math.PI * (1 + Math.sqrt(5))
+
+      this.smileUsers = users.map((u, i) => {
+        const phi = Math.acos(1 - (2 * (i + 0.5)) / N)
+        const theta = goldenAngle * i
+        const px = R * Math.sin(phi) * Math.cos(theta)
+        const py = R * Math.cos(phi)
+        const pz = R * Math.sin(phi) * Math.sin(theta)
+        const id = u.id !== undefined && u.id !== null ? u.id : `u-${i}`
+        return {
+          id,
+          detailId: u.id,
+          avatar: u.avatar || this.defaultAvatar,
+          bubbleClass: i % 2 === 0 ? "bubble" : "bubble_alt",
+          size,
+          px,
+          py,
+          pz,
+        }
+      })
+    },
+
+    // ---------- 动画循环 ----------
+
+    startAnimation() {
+      this.stopAnimation()
+      const loop = () => {
+        this.rafId = requestAnimationFrame(loop)
+        this.tick()
+      }
+      this.rafId = requestAnimationFrame(loop)
+    },
+
+    stopAnimation() {
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId)
+        this.rafId = null
+      }
+    },
+
+    // 页面隐藏时暂停渲染，可见时恢复，避免后台空转耗 GPU
+    onVisibilityChange() {
+      if (document.hidden) {
+        this.stopAnimation()
+        this.onDragEnd()
+      } else if (!this.rafId) {
+        this.startAnimation()
+      }
+    },
+
+    tick() {
+      if (!this.isDragging) {
+        const vx = this.velocity.x
+        const vy = this.velocity.y
+        if (Math.abs(vx) > 0.0001 || Math.abs(vy) > 0.0001) {
+          // 惯性衰减
+          this.rotation.x += vx
+          this.rotation.y += vy
+          this.velocity.x = vx * this.inertiaDamping
+          this.velocity.y = vy * this.inertiaDamping
+        } else {
+          this.velocity.x = 0
+          this.velocity.y = 0
+          // 无人操作时从左向右缓慢自转
+          this.rotation.y += this.autoRotateSpeed
+        }
+      }
+      this.renderFrame()
+    },
+
+    renderFrame() {
+      const sphere = this.$refs.sphere
+      if (!sphere) return
+
+      const rx = this.rotation.x
+      const ry = this.rotation.y
+      sphere.style.transform = `rotateX(${rx}rad) rotateY(${ry}rad)`
+
+      const dots = this.$refs.dots
+      if (!dots || !dots.length) return
+
+      const R = this.sphereRadius
+      if (R <= 0) return
+
+      const sinRx = Math.sin(rx)
+      const cosRx = Math.cos(rx)
+      const sinRy = Math.sin(ry)
+      const cosRy = Math.cos(ry)
+      const minOpacity = 0.25
+
+      for (let i = 0; i < this.smileUsers.length; i += 1) {
+        const item = this.smileUsers[i]
+        const el = dots[i]
+        if (!el) continue
+
+        // 视空间 z：父级 rotateX→rotateY（矩阵 Rx*Ry，点先经 Ry 再经 Rx）
+        const z1 = -item.px * sinRy + item.pz * cosRy
+        const z2 = item.py * sinRx + z1 * cosRx
+        const norm = z2 / R // [-1, 1]
+        const opacity = minOpacity + (1 - minOpacity) * ((norm + 1) / 2)
+        el.style.opacity = opacity
+
+        // 公告牌：位置随球转动，自身反向旋转抵消父级转动，始终正面朝向镜头
+        const half = item.size / 2
+        el.style.transform =
+          `translate3d(${item.px - half}px, ${item.py - half}px, ${item.pz}px)` +
+          ` rotateY(${-ry}rad) rotateX(${-rx}rad)`
+      }
+    },
+
+    // ---------- 拖动 / 惯性 ----------
+
+    onTouchStart(e) {
+      // 标记本次为触摸操作，抑制随后浏览器补发的模拟 mousedown
+      this.suppressMouse = true
+      this.onDragStart(e)
+    },
+
+    onMouseDown(e) {
+      if (this.suppressMouse) {
+        this.suppressMouse = false
         return
       }
-      const maxCount = Math.min(this.avatarPool.length, 15)
-      const container = {
-        width: this.container.width,
-        height: this.container.height,
-        cx: this.container.cx,
-        cy: this.container.cy,
-      }
-      const resizeScale = Math.min(container.width / 900, container.height / 600, 1)
-      const minSize = Math.max(32, Math.floor(56 * resizeScale))
-      const maxSize = Math.max(minSize + 10, Math.floor(94 * resizeScale))
-      const margin = 8
-      const placed = []
-
-      const inEllipse = (cx, cy, a, b, x, y) => {
-        const dx = x - cx
-        const dy = y - cy
-        return (dx * dx) / (a * a) + (dy * dy) / (b * b) <= 1
-      }
-
-      const collides = (item, others) => {
-        return others.some((other) => {
-          const dx = item.cx - other.cx
-          const dy = item.cy - other.cy
-          const minDist = item.radius + other.radius + margin
-          return dx * dx + dy * dy < minDist * minDist
-        })
-      }
-
-      let assignIndex = 0
-      const tryPlaceItem = (id) => {
-        const size = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize
-        const radius = size / 2
-        const a = container.width / 2 - radius - margin
-        const b = container.height / 2 - radius - margin
-        if (a <= 0 || b <= 0) {
-          return null
-        }
-
-        for (let attempt = 0; attempt < 120; attempt += 1) {
-          const angle = Math.random() * Math.PI * 2
-          const r = Math.sqrt(Math.random())
-          const x = container.cx + a * r * Math.cos(angle)
-          const y = container.cy + b * r * Math.sin(angle)
-          if (!inEllipse(container.cx, container.cy, a, b, x, y)) {
-            continue
-          }
-          const poolItem = this.avatarPool[assignIndex % this.avatarPool.length] || { avatar: this.defaultAvatar }
-          const item = {
-            id,
-            detailId: poolItem.id,
-            avatar: poolItem.avatar,
-            size,
-            radius,
-            cx: x,
-            cy: y,
-            visible: false,
-            renderKey: `${id}-${Date.now()}`,
-          }
-          if (!collides(item, placed)) {
-            item.left = x - radius
-            item.top = y - radius
-            placed.push(item)
-            assignIndex += 1
-            return item
-          }
-        }
-        return null
-      }
-
-      for (let i = 0; i < maxCount; i += 1) {
-        const item = tryPlaceItem(i + 1)
-        if (item) {
-          this.smileUsers.push(item)
-        }
-      }
-
-      this.smileUsers.sort(() => Math.random() - 0.5)
-      const minHidden = Math.min(2, Math.max(0, maxCount - 1))
-      const initialVisible = Math.max(1, Math.min(maxCount - minHidden, this.smileUsers.length))
-      this.smileUsers.forEach((item, index) => {
-        item.visible = index < initialVisible
-        item.renderKey = `${item.id}-${item.visible ? "v" : "h"}-${Date.now()}`
-      })
-      const visibleAvatarIds = this.smileUsers
-        .slice(0, initialVisible)
-        .map((it) => it.avatar)
-        .map((a) => {
-          const found = this.avatarPool.find((p) => p.avatar === a)
-          return found ? found.id : null
-        })
-        .filter(Boolean)
-      this.recentQueue = Array.from(new Set(visibleAvatarIds)).slice(-this.recentMax)
-      if (this.avatarPool && this.avatarPool.length) {
-        this.poolIndex = this.smileUsers.length % this.avatarPool.length
-      } else {
-        this.poolIndex = 0
-      }
+      this.onDragStart(e)
     },
 
-    startAvatarSwap() {
-      const swapDelay = 3200
-      this.swapIntervalId = setInterval(() => {
-        const visibleItems = this.smileUsers.filter((item) => item.visible)
-        const hiddenItems = this.smileUsers.filter((item) => !item.visible)
-        if (!visibleItems.length || !hiddenItems.length) {
-          return
-        }
-        const swapCount = Math.min(2, visibleItems.length, hiddenItems.length)
-        const shuffle = (arr) => arr.sort(() => Math.random() - 0.5)
-        const outs = shuffle(visibleItems.slice()).slice(0, swapCount)
-        const ins = shuffle(hiddenItems.slice()).slice(0, swapCount)
-        outs.forEach((item) => {
-          item.visible = false
-        })
-        const tempPickedIds = new Set()
-        const pickNonRecentFromPool = (excludeSet) => {
-          const pool = this.avatarPool || []
-          if (!pool.length) return null
-          const effectiveRecentLimit = Math.min(this.recentMax, Math.max(1, Math.floor(pool.length * 0.6)))
-          let tries = 0
-          while (tries++ < this.retryLimit) {
-            const idx = Math.floor(Math.random() * pool.length)
-            const p = pool[idx]
-            if (!p) continue
-            const pid = p.id || idx
-            if (excludeSet && excludeSet.has(pid)) continue
-            if (!this.recentQueue.includes(pid)) return p
-          }
-          for (let i = 0; i < pool.length; i += 1) {
-            const p = pool[i]
-            const pid = p.id || i
-            if (excludeSet && excludeSet.has(pid)) continue
-            return p
-          }
-          return pool[0]
-        }
-
-        ins.forEach((item) => {
-          const poolItem = pickNonRecentFromPool(tempPickedIds) || {
-            avatar: this.defaultAvatar,
-          }
-          item.avatar = poolItem.avatar
-          item.detailId = poolItem.id
-          const pid = poolItem.id || null
-          if (pid !== null && pid !== undefined) {
-            tempPickedIds.add(pid)
-            this.recentQueue.push(pid)
-            if (this.recentQueue.length > this.recentMax) {
-              this.recentQueue.shift()
-            }
-          }
-          item.visible = true
-          if (this.avatarPool && this.avatarPool.length) {
-            this.poolIndex = (this.poolIndex + 1) % this.avatarPool.length
-          }
-        })
-      }, swapDelay)
+    onDragStart(e) {
+      this.isDragging = true
+      this.dragMoved = false
+      const point = e.touches ? e.touches[0] : e
+      this.dragLast = { x: point.clientX, y: point.clientY }
+      window.addEventListener("mousemove", this.onDragMove)
+      window.addEventListener("mouseup", this.onDragEnd)
+      window.addEventListener("touchmove", this.onDragMove, { passive: false })
+      window.addEventListener("touchend", this.onDragEnd)
+      window.addEventListener("touchcancel", this.onDragEnd)
     },
+
+    onDragMove(e) {
+      if (!this.isDragging) return
+      if (e.cancelable) e.preventDefault()
+      const point = e.touches ? e.touches[0] : e
+      const dx = point.clientX - this.dragLast.x
+      const dy = point.clientY - this.dragLast.y
+      this.dragLast = { x: point.clientX, y: point.clientY }
+
+      if (Math.abs(dx) + Math.abs(dy) > 2) {
+        this.dragMoved = true
+      }
+
+      const sens = this.dragSensitivity
+      // 水平拖动 → 绕 Y 轴；垂直拖动 → 绕 X 轴（方向跟随手指）
+      this.rotation.y += dx * sens
+      this.rotation.x -= dy * sens
+      this.velocity.x = -dy * sens
+      this.velocity.y = dx * sens
+    },
+
+    onDragEnd() {
+      this.isDragging = false
+      this.removeDragListeners()
+    },
+
+    removeDragListeners() {
+      window.removeEventListener("mousemove", this.onDragMove)
+      window.removeEventListener("mouseup", this.onDragEnd)
+      window.removeEventListener("touchmove", this.onDragMove)
+      window.removeEventListener("touchend", this.onDragEnd)
+      window.removeEventListener("touchcancel", this.onDragEnd)
+    },
+
+    // ---------- 业务逻辑 ----------
 
     avatarStyle(item) {
       return {
-        left: `${item.left}px`,
-        top: `${item.top}px`,
         width: `${item.size}px`,
         height: `${item.size}px`,
+        transform: `translate3d(${item.px - item.size / 2}px, ${item.py - item.size / 2}px, ${item.pz}px)`,
       }
     },
 
     openAvatarDetails(item) {
+      // 拖动松手时不触发点击
+      if (this.dragMoved) return
       if (!item || item.detailId === undefined || item.detailId === null || item.detailId === "") {
         this.$myMessage({
           type: "font-error",
@@ -369,6 +487,7 @@ export default {
   width: 100vw;
   height: 100vh;
   position: relative;
+  overflow: hidden;
   background-size: 100% 100%;
   background-image: url(@/assets/img/front/smileCheck/bg.png);
 
@@ -379,32 +498,65 @@ export default {
     left: 50%;
     top: 46%;
     transform: translate(-50%, -50%);
-    overflow: hidden;
-    border-radius: 40%;
+    perspective: 1000px;
+    perspective-origin: 50% 50%;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
 
-    .avatar_dot {
+    &:active {
+      cursor: grabbing;
+    }
+
+    &.dragging,
+    &.dragging .avatar_dot {
+      cursor: grabbing;
+    }
+
+    .sphere {
       position: absolute;
-      border-radius: 50%;
-      padding: 10px;
-      background-image: url(@/assets/img/front/smileCheck/气泡.png);
-      background-size: 100% 100%;
-      opacity: 0;
-      transform: scale(0.2);
-      transition: opacity 0.8s ease, transform 0.8s ease;
+      left: 50%;
+      top: 50%;
+      width: 0;
+      height: 0;
+      transform-style: preserve-3d;
+      transform-origin: 0 0;
 
-      &.visible {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      > img {
-        width: 70%;
-        height: 70%;
-        border-radius: 50%;
+      .avatar_dot {
         position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
+        left: 0;
+        top: 0;
+        transform-origin: 50% 50%;
+        border-radius: 0;
+        overflow: visible;
+        border: 0;
+        box-shadow: none;
+        background-image: url(@/assets/img/front/smileCheck/气泡.png);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        box-sizing: border-box;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &.bubble_alt {
+          background-image: url(@/assets/img/front/smileCheck/气泡2.png);
+        }
+
+        > img {
+          width: 70%;
+          height: 77%;
+          display: block;
+          border-radius: 50%;
+          object-fit: cover;
+          pointer-events: none;
+          transition: transform 0.2s ease;
+        }
+
+        &:hover > img {
+          transform: scale(1.12);
+        }
       }
     }
   }

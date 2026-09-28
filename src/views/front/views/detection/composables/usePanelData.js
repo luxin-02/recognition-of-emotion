@@ -1,3 +1,5 @@
+import { getNegativeEmotionScore, getSmileIndex, getPositiveEmotionScore } from "@/utils/positiveEmotionScore"
+
 const MIN_PANEL_SCORE = 10
 const PANEL_MOTION_INTERVAL = 1200
 
@@ -52,12 +54,6 @@ function moveScore(score, index, amplitude = 14, motionInterval = PANEL_MOTION_I
 
 function moveScores(scores, amplitude = 14, motionInterval = PANEL_MOTION_INTERVAL) {
   return scores.map((score, index) => moveScore(score, index, amplitude, motionInterval))
-}
-
-function createTrendData(baseScore, offsets, groupIndex = 0, motionInterval = PANEL_MOTION_INTERVAL) {
-  return offsets.map((offset, index) => {
-    return moveScore(baseScore + offset, index + groupIndex * 10, 12, motionInterval)
-  })
 }
 
 function createRightTopData(values) {
@@ -130,6 +126,8 @@ export function createPanelDataFromExpressions(expressions, options = {}) {
   const excitement = toScore(happy * 0.5 + surprised * 0.35)
   const optimism = toScore(happy * 0.55 + neutral * 0.2 - sad * 0.18 - fearful * 0.12)
   const confidence = toScore(happy * 0.35 + neutral * 0.35 - fearful * 0.2 - sad * 0.1)
+  const rightTopData = createRightTopData(moveScores([satisfaction, relax, excitement, optimism, confidence], 18, motionInterval))
+  const smileIndex = getSmileIndex(happy)
 
   return {
     leftTopData: moveScores([anxiety, depression, pressure, insomnia, fatigue, irritable, relax], 18, motionInterval),
@@ -143,11 +141,19 @@ export function createPanelDataFromExpressions(expressions, options = {}) {
       emotionBalance,
       emotionStability,
     ], 16, motionInterval),
-    rightTopData: createRightTopData(moveScores([satisfaction, relax, excitement, optimism, confidence], 18, motionInterval)),
+    rightTopData,
     rightBottomData: {
-      psychologyData: createTrendData(Math.round((stressResistance + focus + selfControl) / 3), [-15, -8, 4, -3, 9, 14, 6, 17, 11, 20], 0, motionInterval),
-      positiveData: createTrendData(positive, [-14, -4, 7, 0, 11, 18, 8, 21, 15, 24], 1, motionInterval),
-      negativeData: createTrendData(negative, [-12, 3, 11, 5, 15, 7, 13, 4, -2, -9], 2, motionInterval),
+      psychologyData: Array.from({ length: 12 }, (_, index) =>
+        getPositiveEmotionScore(smileIndex, getMotionOffset(index, 5, motionInterval)),
+      ),
+      // 直接生成完整的 12 个点，避免补点时再次引入较大波动。
+      positiveData: Array.from({ length: 12 }, (_, index) =>
+        // 与心理能力共用微笑基准，但增加独立偏移，避免两项平均值长期相同。
+        getPositiveEmotionScore(smileIndex, getMotionOffset(index, 5, motionInterval) + 4),
+      ),
+      negativeData: Array.from({ length: 12 }, (_, index) =>
+        getNegativeEmotionScore(smileIndex, getMotionOffset(index + 20, 5, motionInterval)),
+      ),
     },
   }
 }

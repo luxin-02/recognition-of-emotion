@@ -98,6 +98,7 @@
 
 <script>
 import * as faceapi from "face-api.js"
+import { getSmileIndex } from "@/utils/positiveEmotionScore"
 import {
   createInitialPanelState,
   createPanelDataFromExpressions,
@@ -108,6 +109,7 @@ const TREND_SIZE = 12
 const DETECTION_DURATION = 10000
 const PROGRESS_INTERVAL = 100
 const PANEL_UPDATE_INTERVAL = 300
+const NO_FACE_TIMEOUT = 2000
 
 const FACE_EMOTION_META = {
   angry: { label: "愤怒", color: "#ff3434" },
@@ -154,6 +156,9 @@ export default {
       faceEmotionLabel: "",
       faceEmotionColor: "#00d4ff",
       lastPanelEmitTime: 0,
+      noFaceSince: null,
+      detectionSession: 0,
+      lastDetectionPayload: null,
     }
   },
   mounted() {
@@ -187,6 +192,7 @@ export default {
       this.stopFaceCore()
       this.resetCheck()
       this.emitZeroDetectionData()
+      const session = this.detectionSession
 
       this.currentState = "shooting"
       this.cameraLoading = true
@@ -201,9 +207,10 @@ export default {
       }
 
       await this.loadFaceModels()
+      if (session !== this.detectionSession) return
 
       this.cameraLoadingText = "正在请求摄像头权限..."
-      this.faceStream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 640 },
           height: { ideal: 480 },
@@ -211,6 +218,11 @@ export default {
         },
         audio: false,
       })
+      if (session !== this.detectionSession) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+      this.faceStream = stream
 
       this.video = this.$refs.videoRef
       this.canvas = this.$refs.faceCanvas
@@ -224,11 +236,12 @@ export default {
       this.video.srcObject = this.faceStream
       await this.waitForVideoReady(this.video)
       await this.video.play()
+      if (session !== this.detectionSession) return
 
       this.cameraLoading = false
       this.faceDetecting = true
       this.startFaceProgress()
-      this.runFaceDetection()
+      this.runFaceDetection(session)
     },
     async loadFaceModels() {
       if (this.modelsLoaded) return
@@ -280,8 +293,8 @@ export default {
         }
       }, PROGRESS_INTERVAL)
     },
-    async runFaceDetection() {
-      if (!this.faceDetecting || !this.video || !this.canvas || !this.ctx) return
+    async runFaceDetection(session = this.detectionSession) {
+      if (session !== this.detectionSession || !this.faceDetecting || !this.video || !this.canvas || !this.ctx) return
 
       const displaySize = {
         width: this.video.clientWidth || 500,
@@ -303,20 +316,36 @@ export default {
           )
           .withFaceExpressions()
 
+        if (session !== this.detectionSession || !this.faceDetecting) return
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
         if (detection) {
+          this.noFaceSince = null
           const resizedDetection = faceapi.resizeResults(detection, displaySize)
           this.drawFaceDetection(resizedDetection)
           this.handleFaceResult(resizedDetection)
+        } else {
+          this.handleMissingFace()
         }
       } catch (error) {
         console.error("Face detection loop failed", error)
       }
 
-      if (this.faceDetecting) {
-        this.detectFrameId = requestAnimationFrame(() => this.runFaceDetection())
+      if (session === this.detectionSession && this.faceDetecting) {
+        this.detectFrameId = requestAnimationFrame(() => this.runFaceDetection(session))
       }
+    },
+    handleMissingFace() {
+      if (this.noFaceSince === null) {
+        this.noFaceSince = Date.now()
+        return
+      }
+
+      if (Date.now() - this.noFaceSince < NO_FACE_TIMEOUT) return
+
+      this.stopFaceDetection()
+      this.$myMessage.error("未识别到人脸，检测已中止，请调整位置后重试", 2500)
     },
     drawFaceDetection(detection) {
       if (!detection || !detection.detection || !detection.expressions) return
@@ -358,7 +387,7 @@ export default {
       ctx.restore()
     },
     handleFaceResult(detection) {
-      if (!detection || !detection.expressions) return
+      if (!this.faceDetecting || !detection || !detection.expressions) return
 
       const now = Date.now()
       if (now - this.lastPanelEmitTime < PANEL_UPDATE_INTERVAL) {
@@ -373,21 +402,10 @@ export default {
       this.emitDetectionData(panelState)
     },
     updateAnalysisFromPanel(panelState, expressions) {
-      const rightTopScores = panelState.rightTopData.map((item) => item.value)
-      const negativeScores = panelState.leftTopData.slice(0, 6)
-      const abilityScores = [
-        panelState.leftBottomData[0],
-        panelState.leftBottomData[2],
-        panelState.leftBottomData[3],
-        panelState.leftBottomData[4],
-        panelState.leftBottomData[6],
-        panelState.leftBottomData[7],
-      ]
-
-      const positiveEmotion = average(rightTopScores)
-      const negativeEmotion = average(negativeScores)
-      const mentalAbility = average(abilityScores)
-      const smileIndex = clampScore((expressions.happy || 0) * 100 + positiveEmotion * 0.35)
+      const positiveEmotion = average(panelState.rightBottomData.positiveData)
+      const negativeEmotion = average(panelState.rightBottomData.negativeData)
+      const mentalAbility = average(panelState.rightBottomData.psychologyData)
+      const smileIndex = getSmileIndex(expressions.happy)
 
       this.analysisData = {
         smileIndex,
@@ -398,10 +416,11 @@ export default {
     },
     emitDetectionData(panelState) {
       const payload = this.createDetectionPayload(panelState)
-      console.log("Detection panel data", payload)
-      this.$emit("emotion-change", payload)
+      this.lastDetectionPayload = this.cloneDetectionPayload(payload)
+      this.$emit("emotion-change", this.cloneDetectionPayload(payload))
     },
     emitZeroDetectionData() {
+      this.lastDetectionPayload = null
       this.$emit("emotion-change", this.createZeroDetectionPayload())
     },
     createDetectionPayload(panelState) {
@@ -412,7 +431,18 @@ export default {
         ZMrightBottom: this.toTrendData(panelState.rightBottomData.positiveData),
         FMrightBottom: this.toTrendData(panelState.rightBottomData.negativeData),
         XLrightBottom: this.toTrendData(panelState.rightBottomData.psychologyData),
-        analysisData: this.analysisData,
+        analysisData: { ...this.analysisData },
+      }
+    },
+    cloneDetectionPayload(payload) {
+      return {
+        leftValueData: [...payload.leftValueData],
+        leftBottomValueData: [...payload.leftBottomValueData],
+        rightTopValueData: payload.rightTopValueData.map((item) => ({ ...item })),
+        ZMrightBottom: [...payload.ZMrightBottom],
+        FMrightBottom: [...payload.FMrightBottom],
+        XLrightBottom: [...payload.XLrightBottom],
+        analysisData: { ...payload.analysisData },
       }
     },
     createZeroDetectionPayload() {
@@ -425,10 +455,10 @@ export default {
         FMrightBottom: Array(TREND_SIZE).fill(0),
         XLrightBottom: Array(TREND_SIZE).fill(0),
         analysisData: {
-          smileIndex: this.analysisData?.smileIndex || 0,
-          positiveEmotion: this.analysisData?.positiveEmotion || 0,
-          negativeEmotion: this.analysisData?.negativeEmotion || 0,
-          mentalAbility: this.analysisData?.mentalAbility || 0,
+          smileIndex: 0,
+          positiveEmotion: 0,
+          negativeEmotion: 0,
+          mentalAbility: 0,
         },
       }
     },
@@ -449,10 +479,15 @@ export default {
       return values
     },
     captureAndCompleteDetection() {
+      if (this.currentState !== "shooting") return
+
+      const payload = this.lastDetectionPayload
+        ? this.cloneDetectionPayload(this.lastDetectionPayload)
+        : this.createZeroDetectionPayload()
       this.captureCurrentFrame()
-      this.$emit("report-add", this.analysisData)
       this.stopFaceCore()
       this.currentState = "analyzed"
+      this.$emit("report-add", payload)
     },
     captureCurrentFrame() {
       const video = this.$refs.videoRef
@@ -481,6 +516,7 @@ export default {
       this.emitZeroDetectionData()
     },
     stopFaceCore() {
+      this.detectionSession += 1
       this.faceDetecting = false
       this.cameraLoading = false
       this.faceEmotionVisible = false
@@ -513,6 +549,14 @@ export default {
       this.currentState = "prescoring"
       this.detectionProgress = 0
       this.capturedImage = null
+      this.analysisData = {
+        smileIndex: 0,
+        positiveEmotion: 0,
+        negativeEmotion: 0,
+        mentalAbility: 0,
+      }
+      this.noFaceSince = null
+      this.lastPanelEmitTime = 0
       if (this.progressTimer) {
         clearInterval(this.progressTimer)
         this.progressTimer = null

@@ -54,7 +54,7 @@
           <div class="w100">{{ item.sex }}</div>
           <div class="w200">{{ item.username }}</div>
           <div class="w300" style="color: #00a6fc">
-            {{ item.smile_index }}
+            {{ showSmileIndex(item.smile_index) }}
           </div>
           <div class="w150">
             <!-- {{ $formatDate2(item.add_time * 1000, "yyyy-MM-dd") }} -->
@@ -94,6 +94,7 @@ import { deptApiList } from "@/server/api/dept"
 import shootDetails from "@/views/front/views/smileCheck/components/shootDetails.vue"
 import Shoot from "./components/shoot.vue"
 import { deleteSmileClock, smileClockList } from "@/server/api/smileCheck"
+import { clampSmileIndex } from "@/utils/positiveEmotionScore"
 export default {
   components: {
     shootDetails,
@@ -173,6 +174,9 @@ export default {
     },
     changePage(page) {
       this.reportList.page = page
+    },
+    showSmileIndex(value) {
+      return clampSmileIndex(value)
     },
     async getClockList(page) {
       if (page) {

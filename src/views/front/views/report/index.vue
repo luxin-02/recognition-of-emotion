@@ -47,7 +47,7 @@
     <div class="list_wrap">
       <ul v-if="isScaleReport">
         <li class="roof">
-          <div class="w200" style="text-align: center">测评用户</div>
+          <div class="w200" style="text-align: center">用户名称</div>
           <div class="w200">所在部门</div>
           <div class="w100">性别</div>
           <div class="w200">账号</div>
@@ -79,7 +79,7 @@
       </ul>
       <ul v-else>
         <li class="roof">
-          <div class="w300" style="text-align: center">测评用户</div>
+          <div class="w300" style="text-align: center">用户名称</div>
           <div class="w150">所在部门</div>
           <div class="w100">性别</div>
           <div class="w150">账号</div>
@@ -160,6 +160,7 @@ import { deptApiList } from "@/server/api/dept"
 import { exportWord } from "@/utils/export"
 import { getSmileAssessList, deleteSmileAssess, getSmileAssessDetail } from "@/server/api/detection"
 import { normalizeDetectionSection, toTextList } from "@/utils/detectionReport"
+import { clampSmileIndex } from "@/utils/positiveEmotionScore"
 
 const REPORT_TYPES = {
   SCALE: "测评报告",
@@ -387,6 +388,9 @@ export default {
         if (data.code == this.$global.successCode) {
           this.infoData = data.data
           this.infoData.image_analysis = normalizeDetectionSection(this.safeJsonParse(this.infoData.image_analysis))
+          if (this.infoData.image_analysis.value.length) {
+            this.infoData.image_analysis.value[0] = clampSmileIndex(this.infoData.image_analysis.value[0])
+          }
           this.infoData.mental_ability = normalizeDetectionSection(this.safeJsonParse(this.infoData.mental_ability))
           this.infoData.negative = normalizeDetectionSection(this.safeJsonParse(this.infoData.negative))
           this.infoData.positive = normalizeDetectionSection(this.safeJsonParse(this.infoData.positive))

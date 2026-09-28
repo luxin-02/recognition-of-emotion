@@ -1,7 +1,7 @@
 <template>
   <div class="report_details">
     <div class="module_title">报告详情</div>
-    <div class="class_title">心理评估分析报告</div>
+    <div class="class_title">情绪检测分析报告</div>
     <div class="content_wrap">
       <div class="mk_title"><i></i>基本信息</div>
       <div class="user_info">
@@ -230,6 +230,7 @@ import * as echarts from "echarts"
 import scaleMixin from "@/mixins/scaleMixin"
 import { getSmileAssessDetail } from "@/server/api/detection"
 import { normalizeDetectionSection, toTextList } from "@/utils/detectionReport"
+import { clampSmileIndex } from "@/utils/positiveEmotionScore"
 export default {
   mixins: [scaleMixin],
   data() {
@@ -266,6 +267,9 @@ export default {
         if (data.code == this.$global.successCode) {
           this.reportData = data.data
           this.reportData.image_analysis = normalizeDetectionSection(this.safeJsonParse(this.reportData.image_analysis))
+          if (this.reportData.image_analysis.value.length) {
+            this.reportData.image_analysis.value[0] = clampSmileIndex(this.reportData.image_analysis.value[0])
+          }
           this.reportData.mental_ability = normalizeDetectionSection(this.safeJsonParse(this.reportData.mental_ability))
           this.reportData.negative = normalizeDetectionSection(this.safeJsonParse(this.reportData.negative))
           this.reportData.positive = normalizeDetectionSection(this.safeJsonParse(this.reportData.positive))
@@ -726,7 +730,7 @@ export default {
             color: #ffffff;
           }
           > .text2 {
-            font-size: 40px;
+            font-size: 32px;
             font-family: "ziyuanyuanti600W";
             text-align: center;
             color: #fff;

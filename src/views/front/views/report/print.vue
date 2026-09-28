@@ -1,7 +1,7 @@
 <template>
   <print-box ref="print_box">
     <div class="wrap" ref="targetHtml">
-      <div class="class_title">心理评估分析报告</div>
+      <div class="class_title">{{ reportTitle }}</div>
       <div class="content_wrap">
         <div class="mk_title"><i></i>基本信息</div>
         <div class="user_info">
@@ -161,6 +161,7 @@ import PrintBox from "@/components/common/print/PrintBox.vue"
 export default {
   name: "print",
   props: ["reportData", "type", "chartImg"],
+  computed: { reportTitle() { return this.type === "心理训练" ? "心理体验分析报告" : "心理评估分析报告" } },
   components: {
     PrintBox,
   },
