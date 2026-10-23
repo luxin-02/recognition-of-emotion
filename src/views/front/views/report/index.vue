@@ -364,13 +364,16 @@ export default {
         const { data } = await config.infoApi({ id: this.detailsId })
         if (data.code !== this.$global.successCode) return null
         this.infoData = data.data
-        const indicator = []
-        const series = []
-        data.data.record_result.forEach((item) => {
-          indicator.push({ name: item.gradeName, max: 100 })
-          series.push(item.prop)
-        })
-        this.radarMapChartFn(indicator, series)
+        this.chartImg = ""
+        if (data.data.record_result.length > 1) {
+          const indicator = []
+          const series = []
+          data.data.record_result.forEach((item) => {
+            indicator.push({ name: item.gradeName, max: 100 })
+            series.push(item.prop)
+          })
+          this.radarMapChartFn(indicator, series)
+        }
         return { isScale: true }
       } else if (this.reportType === REPORT_TYPES.TRAINING) {
         const { data } = await config.infoApi({ id: this.detailsId })

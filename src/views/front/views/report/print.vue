@@ -80,7 +80,7 @@
           <div v-for="(item, i) in reportData.record_result" :key="i">
             <div class="mk2_title">
               <img src="@/assets/img/front/report/yuan.png" />
-              {{ item.gradeName }} - {{ item.prop + "%" }}
+              {{ item.gradeName }} ： {{ item.prop + "%" }}
             </div>
             <!-- <el-progress
               :percentage="item.prop"
@@ -96,7 +96,7 @@
                   backgroundColor: getJdtColor(item.prop),
                 }"
               >
-                -
+                ：
               </div>
             </div>
           </div>
@@ -107,9 +107,12 @@
           </div>
           <div class="explain_text">
             <div v-for="(item, i) in reportData.record_result" :key="i">
-              <p>{{ item.gradeName }}</p>
-              <p>{{ item.degree }}</p>
-              <p>说明：{{ item.result }}</p>
+              <!-- <p>{{ item.gradeName }}</p> -->
+              <div v-html="item.degree"></div>
+              <div>
+                说明：
+                <div v-html="item.result"></div>
+              </div>
               <p>得分：{{ item.scores }} , 分数占比：{{ item.prop }}%</p>
               <br />
             </div>

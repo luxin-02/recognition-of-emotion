@@ -26,7 +26,7 @@
             <div v-if="Array.isArray($store.getters.userInfo.depts) && $store.getters.userInfo.depts.length">
               部门：{{ $store.getters.userInfo.depts[0].class_name }}
             </div>
-            <i>个人资料</i>
+            <i @click="$router.push('/userInfo')">个人资料</i>
           </div>
 
           <div class="synthetical">
@@ -52,7 +52,7 @@
               <div class="xly">
                 欢迎踏入<i style="color: #ddbc45">心灵</i>栖息地 <br />开启<i style="color: #ddbc45">心灵之旅</i>！
               </div>
-              <button>开始探索</button>
+              <button @click="$router.push('/music')">开始探索</button>
             </div>
             <div class="item_list">
               <div @click="$router.push('/music')">音乐主题</div>
@@ -205,8 +205,9 @@ export default {
           },
           axisLabel: {
             textStyle: {
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 400,
+              color: "#000",
             },
             rotate: 15,
             interval: 0,
@@ -408,6 +409,7 @@ export default {
             background-image: url(@/assets/img/front/home/个人资料.png);
             background-size: 100% 100%;
             margin-top: 10px;
+            cursor: pointer;
           }
         }
 
@@ -536,6 +538,7 @@ export default {
                 background-color: #00000000;
                 color: #fff;
                 font-size: 16px;
+                cursor: default;
               }
             }
             .item_list {

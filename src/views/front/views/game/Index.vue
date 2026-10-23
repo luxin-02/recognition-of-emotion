@@ -113,7 +113,7 @@ div.user-info-box {
   width: 1560px;
   height: 760px;
   position: absolute;
-  top: 44%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-image: url(@/assets/img/front/index/biankuang.png);

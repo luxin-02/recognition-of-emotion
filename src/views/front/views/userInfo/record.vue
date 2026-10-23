@@ -352,9 +352,12 @@ export default {
   }
   .right {
     // height: 400px;
-    overflow: scroll;
-    &::-webkit-scrollbar {
-      display: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    &::-webkit-scrollbar-thumb {
+      display: block;
+      border-radius: 4px;
+      background: #00aeff;
     }
     > .jdt_wrap {
       width: 100%;

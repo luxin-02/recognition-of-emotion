@@ -52,6 +52,12 @@
             联系电话： <i>{{ reportData.phone }}</i>
           </div>
         </div>
+        <div v-if="$route.query.type === '测评报告'">
+          <div>
+            是否预警：
+            <i :style="{ color: gaugeWarningDisplay.color }">{{ gaugeWarningDisplay.text }}</i>
+          </div>
+        </div>
       </div>
       <br />
 
@@ -154,6 +160,23 @@ export default {
         ? "心理评估分析报告"
         : "情绪检测分析报告"
     },
+    gaugeWarningDisplay() {
+      const report = this.detailsLoading ? {} : this.reportData || {}
+      const value = report.gauge_warning
+      const unknown = { text: "--", color: "#bfbfbf" }
+      if (typeof value !== "number" && typeof value !== "string") return unknown
+      if (typeof value === "string" && value.trim() === "") return unknown
+
+      const count = Number(value)
+      if (!Number.isInteger(count) || count < 0) return unknown
+      if (count > 0) return { text: "是", color: "#ff7875" }
+
+      const records = Array.isArray(report.warning_records) ? report.warning_records : []
+      const allCleared = records.length > 0 && records.every((item) => item && (item.is_clear === 1 || item.is_clear === "1"))
+      return allCleared
+        ? { text: "否（已解除）", color: "#40a9ff" }
+        : { text: "否", color: "#c2efff" }
+    },
   },
   created() {},
   mounted() {
@@ -167,6 +190,7 @@ export default {
   methods: {
     async getGaugeInfo() {
       this.detailsLoading = true
+      this.reportData = ""
 
       try {
         const { data } = await frontGaugeReportApiInfo({

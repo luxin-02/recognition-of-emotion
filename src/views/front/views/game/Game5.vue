@@ -155,10 +155,10 @@ export default {
           img2: require("@/assets/images/game/game5/1-2.jpg"),
           differ: [
             {
-              width: "0.70rem",
-              height: "2.30rem",
+              width: "1rem",
+              height: "4.80rem",
               top: "0.25rem",
-              left: "0.07rem",
+              left: "0.1rem",
             },
             {
               width: "0.84rem",
